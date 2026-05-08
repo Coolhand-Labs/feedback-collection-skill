@@ -1,0 +1,270 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+#
+# Copyright 2025 Coolhand Labs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
+# Validates detection-pattern YAML files for the feedback-collection skill.
+#
+# Usage:
+#   bin/validate-patterns                # validate every patterns file
+#   bin/validate-patterns path/to/file   # validate a specific file (one or more)
+#   bin/validate-patterns --self-test    # run built-in fixture assertions
+#
+# Exits 0 if all files / assertions pass, 1 otherwise.
+
+require "yaml"
+require "tmpdir"
+
+PATTERNS_DIR = File.expand_path("../skills/feedback-collection/detection-patterns", __dir__)
+
+TOP_LEVEL_KEYS = %w[
+  version
+  description
+  sdk_imports
+  inference_calls
+  http_inference_hosts
+  existing_coolhand
+  existing_feedback_ui
+  request_id_extraction
+].freeze
+
+REQUIRED_LANGUAGES = %w[python node ruby].freeze
+
+# Top-level keys whose value must be a non-empty list of non-empty unique strings.
+STRING_LIST_KEYS = %w[
+  inference_calls
+  http_inference_hosts
+  existing_coolhand
+  existing_feedback_ui
+].freeze
+
+def validate_string_list(label, list, errors, allow_empty: false)
+  unless list.is_a?(Array)
+    errors << "#{label}: not a list"
+    return
+  end
+
+  if list.empty? && !allow_empty
+    errors << "#{label}: list is empty"
+    return
+  end
+
+  seen = {}
+  list.each_with_index do |entry, i|
+    if !entry.is_a?(String)
+      errors << "#{label}[#{i}]: not a string (#{entry.inspect})"
+    elsif entry.strip.empty?
+      errors << "#{label}[#{i}]: empty string"
+    elsif seen.key?(entry)
+      errors << "#{label}[#{i}]: duplicate of index #{seen[entry]}: #{entry.inspect}"
+    else
+      seen[entry] = i
+    end
+  end
+end
+
+def validate(path)
+  errors = []
+  doc =
+    begin
+      YAML.safe_load_file(path)
+    rescue Psych::SyntaxError => e
+      return ["YAML parse error: #{e.message}"]
+    end
+
+  return ["top level is not a Hash"] unless doc.is_a?(Hash)
+
+  TOP_LEVEL_KEYS.each do |k|
+    errors << "missing top-level key: #{k}" unless doc.key?(k)
+  end
+
+  return errors if errors.any? { |e| e.start_with?("missing top-level key:") }
+
+  unless doc["version"].is_a?(String) && !doc["version"].strip.empty?
+    errors << "version: must be a non-empty string"
+  end
+
+  unless doc["description"].is_a?(String) && !doc["description"].strip.empty?
+    errors << "description: must be a non-empty string"
+  end
+
+  sdk = doc["sdk_imports"]
+  if sdk.is_a?(Hash)
+    REQUIRED_LANGUAGES.each do |lang|
+      unless sdk.key?(lang)
+        errors << "sdk_imports: missing required language key: #{lang}"
+        next
+      end
+      # Empty list per-language is allowed (a provider may have no SDK for that language)
+      # but every entry must be a non-empty unique string.
+      validate_string_list("sdk_imports.#{lang}", sdk[lang], errors, allow_empty: true)
+    end
+    extra = sdk.keys - REQUIRED_LANGUAGES
+    extra.each { |k| errors << "sdk_imports: unknown language key: #{k}" }
+  else
+    errors << "sdk_imports: not a Hash"
+  end
+
+  STRING_LIST_KEYS.each do |k|
+    validate_string_list(k, doc[k], errors)
+  end
+
+  rid = doc["request_id_extraction"]
+  if rid.is_a?(Hash)
+    if rid.empty?
+      errors << "request_id_extraction: hash is empty"
+    end
+    rid.each do |provider, langs|
+      unless langs.is_a?(Hash)
+        errors << "request_id_extraction.#{provider}: not a Hash"
+        next
+      end
+      if langs.empty?
+        errors << "request_id_extraction.#{provider}: no language entries"
+      end
+      langs.each do |lang, snippet|
+        unless snippet.is_a?(String) && !snippet.strip.empty?
+          errors << "request_id_extraction.#{provider}.#{lang}: must be a non-empty string"
+        end
+      end
+    end
+  else
+    errors << "request_id_extraction: not a Hash"
+  end
+
+  errors
+end
+
+def base_fixture
+  {
+    "version" => "test",
+    "description" => "self-test fixture",
+    "sdk_imports" => {
+      "python" => ["from openai"],
+      "node" => ["from 'openai'"],
+      "ruby" => ["require 'openai'"]
+    },
+    "inference_calls" => [".chat.completions.create"],
+    "http_inference_hosts" => ["openai.com"],
+    "existing_coolhand" => ["coolhand"],
+    "existing_feedback_ui" => ["thumbs up"],
+    "request_id_extraction" => {
+      "openai" => {
+        "python" => "response.response_headers.get('x-request-id')",
+        "node" => "response.headers.get('x-request-id')"
+      }
+    }
+  }
+end
+
+def self_test
+  cases = []
+
+  cases << { name: "valid baseline", doc: base_fixture, expect: :pass }
+
+  missing_top = base_fixture
+  missing_top.delete("inference_calls")
+  cases << { name: "missing top-level key inference_calls", doc: missing_top, expect: :fail, match: /missing top-level key: inference_calls/ }
+
+  missing_lang = base_fixture
+  missing_lang["sdk_imports"].delete("ruby")
+  cases << { name: "sdk_imports missing required language", doc: missing_lang, expect: :fail, match: /sdk_imports: missing required language key: ruby/ }
+
+  empty_string = base_fixture
+  empty_string["existing_coolhand"] = ["coolhand", ""]
+  cases << { name: "empty string in list", doc: empty_string, expect: :fail, match: /existing_coolhand\[1\]: empty string/ }
+
+  duplicate = base_fixture
+  duplicate["existing_feedback_ui"] = ["thumbs up", "thumbs up"]
+  cases << { name: "duplicate entry in list", doc: duplicate, expect: :fail, match: /existing_feedback_ui\[1\]: duplicate of index 0/ }
+
+  empty_list = base_fixture
+  empty_list["http_inference_hosts"] = []
+  cases << { name: "empty top-level string list", doc: empty_list, expect: :fail, match: /http_inference_hosts: list is empty/ }
+
+  bad_rid = base_fixture
+  bad_rid["request_id_extraction"]["openai"]["python"] = ""
+  cases << { name: "empty request_id_extraction snippet", doc: bad_rid, expect: :fail, match: /request_id_extraction\.openai\.python: must be a non-empty string/ }
+
+  unknown_lang = base_fixture
+  unknown_lang["sdk_imports"]["go"] = ["something"]
+  cases << { name: "unknown sdk_imports language", doc: unknown_lang, expect: :fail, match: /sdk_imports: unknown language key: go/ }
+
+  passed = 0
+  failed = []
+
+  Dir.mktmpdir do |dir|
+    cases.each_with_index do |c, i|
+      doc = Marshal.load(Marshal.dump(c[:doc]))
+      path = File.join(dir, "fixture_#{i}.yml")
+      File.write(path, doc.to_yaml)
+      errors = validate(path)
+
+      ok =
+        case c[:expect]
+        when :pass then errors.empty?
+        when :fail then errors.any? { |e| e =~ c[:match] }
+        end
+
+      if ok
+        passed += 1
+      else
+        failed << { name: c[:name], expected: c[:expect], errors: errors }
+      end
+    end
+  end
+
+  total = cases.size
+  if failed.empty?
+    puts "OK   self-test (#{passed}/#{total} passed)"
+    0
+  else
+    puts "FAIL self-test (#{passed}/#{total} passed)"
+    failed.each do |f|
+      puts "     - #{f[:name]} (expected #{f[:expected]}, got errors: #{f[:errors].inspect})"
+    end
+    1
+  end
+end
+
+if ARGV.include?("--self-test")
+  exit self_test
+end
+
+paths =
+  if ARGV.empty?
+    Dir.glob(File.join(PATTERNS_DIR, "*.yml")).sort
+  else
+    ARGV
+  end
+
+if paths.empty?
+  warn "No YAML files to validate"
+  exit 1
+end
+
+failed = false
+paths.each do |path|
+  errors = validate(path)
+  if errors.empty?
+    puts "OK   #{path}"
+  else
+    failed = true
+    puts "FAIL #{path}"
+    errors.each { |e| puts "     - #{e}" }
+  end
+end
+
+exit(failed ? 1 : 0)

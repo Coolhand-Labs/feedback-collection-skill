@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+#
+# Copyright 2025 Coolhand Labs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
+"""Refresh the Coolhand v2 OpenAPI snapshot from coolhandlabs.com/docs.
+
+Usage:
+  bin/refresh-openapi-snapshot           # fetch upstream, overwrite snapshot + meta
+  bin/refresh-openapi-snapshot --check   # fetch upstream, compare to local snapshot,
+                                         # exit 0 if match, 1 if drift, 2 on fetch error
+
+Maintainer tool (no-args mode) and runtime freshness check (--check mode).
+Python stdlib only.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sys
+import urllib.error
+import urllib.request
+from datetime import date
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SNAPSHOT = REPO_ROOT / "skills/self-hosted-feedback/references/coolhand-openapi-v2.json"
+META = REPO_ROOT / "skills/self-hosted-feedback/references/coolhand-openapi-v2.meta.json"
+PLUGIN_JSON = REPO_ROOT / ".claude-plugin/plugin.json"
+SOURCE_URL = "https://coolhandlabs.com/docs"
+TIMEOUT = 15
+
+
+def _plugin_version() -> str:
+    try:
+        return json.loads(PLUGIN_JSON.read_text()).get("version", "unknown")
+    except (FileNotFoundError, json.JSONDecodeError):
+        return "unknown"
+
+
+USER_AGENT = f"coolhand-skill-refresher/{_plugin_version()}"
+
+
+def fetch_html(url: str = SOURCE_URL) -> str:
+    """GET the docs page, return decoded HTML."""
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+        return resp.read().decode("utf-8")
+
+
+def extract_spec(html: str) -> dict:
+    """Pull the OpenAPI spec out of Redoc's `__redoc_state` blob."""
+    m = re.search(r"__redoc_state\s*=\s*", html)
+    if not m:
+        raise RuntimeError("Could not find __redoc_state in HTML")
+    start = m.end()
+    if html[start] != "{":
+        raise RuntimeError(f"__redoc_state does not start with '{{' (got {html[start]!r})")
+
+    depth = 0
+    in_string = False
+    escape = False
+    end = -1
+    i = start
+    while i < len(html):
+        c = html[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                in_string = False
+        else:
+            if c == '"':
+                in_string = True
+            elif c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        i += 1
+
+    if end == -1:
+        raise RuntimeError("Could not find matching close brace for __redoc_state")
+
+    state = json.loads(html[start:end])
+    return state["spec"]["data"]
+
+
+def canonical_bytes(spec: dict) -> bytes:
+    """Deterministic byte sequence: sorted keys, 2-space indent, UTF-8, trailing newline."""
+    text = json.dumps(spec, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
+    return text.encode("utf-8")
+
+
+def sha256(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+def load_local_meta() -> dict:
+    if not META.exists():
+        return {}
+    with META.open() as f:
+        return json.load(f)
+
+
+def write_snapshot(spec: dict, source_url: str) -> str:
+    """Write the canonical spec and meta sidecar. Returns the new hash."""
+    body = canonical_bytes(spec)
+    SNAPSHOT.write_bytes(body)
+    digest = sha256(body)
+    meta = {
+        "source_url": source_url,
+        "snapshot_taken_at": date.today().isoformat(),
+        "openapi_version": spec.get("openapi"),
+        "api_version": spec.get("info", {}).get("version"),
+        "spec_sha256": digest,
+        "canonicalization": "json.dumps(spec, sort_keys=True, indent=2, ensure_ascii=False) + final newline; hash is SHA-256 of UTF-8 bytes",
+    }
+    META.write_text(json.dumps(meta, indent=2) + "\n")
+    return digest
+
+
+def check_mode() -> int:
+    local = load_local_meta()
+    local_hash = local.get("spec_sha256")
+    try:
+        html = fetch_html()
+        spec = extract_spec(html)
+    except (urllib.error.URLError, RuntimeError, json.JSONDecodeError) as e:
+        print(f"FETCH-ERROR: could not retrieve upstream spec: {e}", file=sys.stderr)
+        return 2
+    upstream_hash = sha256(canonical_bytes(spec))
+    if local_hash and local_hash == upstream_hash:
+        print(f"MATCH: snapshot is current ({upstream_hash})")
+        return 0
+    print(f"DRIFT: local={local_hash or '<none>'}  upstream={upstream_hash}")
+    return 1
+
+
+def refresh_mode() -> int:
+    try:
+        html = fetch_html()
+        spec = extract_spec(html)
+    except (urllib.error.URLError, RuntimeError, json.JSONDecodeError) as e:
+        print(f"FETCH-ERROR: could not retrieve upstream spec: {e}", file=sys.stderr)
+        return 2
+    upstream_hash = sha256(canonical_bytes(spec))
+    local = load_local_meta()
+    if local.get("spec_sha256") == upstream_hash:
+        print(f"OK   spec unchanged; snapshot + meta untouched ({upstream_hash})")
+        return 0
+    digest = write_snapshot(spec, SOURCE_URL)
+    print(f"OK   wrote {SNAPSHOT.relative_to(REPO_ROOT)}")
+    print(f"OK   wrote {META.relative_to(REPO_ROOT)}")
+    print(f"     sha256: {digest}")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) >= 2 and argv[1] == "--check":
+        return check_mode()
+    if len(argv) >= 2 and argv[1] not in ("--check",):
+        print(f"unknown arg: {argv[1]!r}", file=sys.stderr)
+        return 64
+    return refresh_mode()
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

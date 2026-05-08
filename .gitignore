@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ruby
+.bundle/
+vendor/bundle/
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local

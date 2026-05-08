@@ -1,0 +1,96 @@
+version: "1"
+description: "AI/LLM provider, inference, and existing-feedback detection patterns for the feedback-collection skill. Used by Phase 1 of SKILL.md."
+
+# Substring patterns that indicate an AI/LLM SDK is imported.
+# Match these against source files of the corresponding language.
+# These are substring matches, not regexes.
+sdk_imports:
+  python:
+    - "from openai"
+    - "import openai"
+    - "from anthropic"
+    - "import anthropic"
+    - "from langchain"
+    - "from llama_index"
+    - "import ollama"
+    - "from google.generativeai"
+    - "import cohere"
+    - "from mistralai"
+    - "import boto3"
+  node:
+    - "from 'openai'"
+    - "require('openai')"
+    - "from \"openai\""
+    - "from '@anthropic-ai/sdk'"
+    - "from \"@anthropic-ai/sdk\""
+    - "from 'langchain'"
+    - "from 'llamaindex'"
+    - "from '@google/generative-ai'"
+    - "from 'ollama'"
+    - "from 'cohere-ai'"
+    - "from 'replicate'"
+    - "from '@aws-sdk/client-bedrock-runtime'"
+  ruby:
+    - "require 'ruby-openai'"
+    - "require 'openai'"
+    - "require 'anthropic'"
+    - "require 'langchainrb'"
+    - "OpenAI::Client"
+    - "Anthropic::Client"
+
+# Method-call patterns indicating an LLM inference call.
+# Language-agnostic — match against any source file.
+inference_calls:
+  - ".chat.completions.create"
+  - ".chat.completions.stream"
+  - ".messages.create"
+  - ".messages.stream"
+  - ".embeddings.create"
+  - ".generate"
+  - ".complete"
+  - ".run"
+
+# Hostname substrings for direct-HTTP-based inference detection.
+# Match these inside `requests.post`, `httpx.post`, `Faraday.post`,
+# `Net::HTTP.post`, `fetch(...)`, etc.
+http_inference_hosts:
+  - "openai.com"
+  - "anthropic.com"
+  - "googleapis.com"
+  - "api.mistral.ai"
+  - "api.cohere.com"
+  - "bedrock."
+
+# Indicators that Coolhand is already partially integrated.
+existing_coolhand:
+  - "coolhand"
+  - "Coolhand"
+  - "CoolhandJS"
+  - "create_feedback"
+  - "createFeedback"
+  - "COOLHAND_API_KEY"
+
+# Indicators that some form of feedback UI already exists in the codebase.
+existing_feedback_ui:
+  - "thumbs up"
+  - "thumbs down"
+  - "👍"
+  - "👎"
+  - "like-button"
+  - "dislike-button"
+  - "rate-button"
+  - "star-rating"
+  - "Was this helpful"
+  - "Was this useful"
+
+# How to extract `x-request-id` from a provider's response object.
+# Used to populate `llm_provider_unique_id` when Coolhand server SDK is not installed.
+request_id_extraction:
+  openai:
+    python: "response.response_headers.get('x-request-id')"
+    node: "response.headers.get('x-request-id')"
+    ruby: "response.headers['x-request-id']"
+  anthropic:
+    python: "response.headers.get('x-request-id') (or response.request_id via SDK)"
+    node: "response.headers.get('x-request-id')"
+    ruby: "response.headers['x-request-id']"

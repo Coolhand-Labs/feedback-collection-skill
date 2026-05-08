@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+#
+# Copyright 2025 Coolhand Labs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
+# Checks every https:// URL in every SKILL.md and every references/*.md across
+# all skills/. Catches silent degradation when SDK READMEs move, GitHub repos
+# rename, or documentation links rot. Markdown only — JSON / YAML reference
+# files are excluded (those may contain third-party example URLs we don't own).
+#
+# Usage:
+#   bin/check-skill-urls               # check all URLs in skills/**/*.md
+#   bin/check-skill-urls --self-test   # exercise pass + fail branches
+#
+# Exits 0 if every URL responds 2xx/3xx, 1 otherwise.
+# Requires: curl, network access.
+
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SKILLS_DIR="$REPO_ROOT/skills"
+
+# Returns 0 if URL responds 2xx/3xx, 1 otherwise. One retry on transient failure.
+check_url() {
+  local url="$1"
+  local code=000
+  for attempt in 1 2; do
+    code=$(curl -sS -L -o /dev/null -w '%{http_code}' --max-time 15 "$url" 2>/dev/null) || code=000
+    if [[ "$code" =~ ^[23] ]]; then
+      printf 'OK   %-3s %s\n' "$code" "$url"
+      return 0
+    fi
+    [[ "$attempt" -eq 1 ]] && sleep 2
+  done
+  printf 'FAIL %-3s %s\n' "$code" "$url"
+  return 1
+}
+
+self_test() {
+  local pass=0 fail=0
+
+  # Should succeed: example.com is RFC-reserved, IANA-operated, stable.
+  if check_url "https://example.com" >/dev/null; then
+    pass=$((pass+1))
+  else
+    echo "self-test: expected example.com to pass" >&2
+    fail=$((fail+1))
+  fi
+
+  # Should fail: .invalid is RFC 2606 reserved — DNS will never resolve.
+  if check_url "https://nonexistent.invalid" >/dev/null 2>&1; then
+    echo "self-test: expected .invalid TLD to fail" >&2
+    fail=$((fail+1))
+  else
+    pass=$((pass+1))
+  fi
+
+  if [[ $fail -eq 0 ]]; then
+    echo "OK   self-test ($pass/2 passed)"
+    return 0
+  fi
+  echo "FAIL self-test ($pass/2 passed)" >&2
+  return 1
+}
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  self_test
+  exit $?
+fi
+
+if [[ ! -d "$SKILLS_DIR" ]]; then
+  echo "skills/ directory not found at $SKILLS_DIR" >&2
+  exit 1
+fi
+
+# Discover all SKILL.md files and references/*.md files.
+SKILL_FILES=()
+while IFS= read -r f; do
+  SKILL_FILES+=("$f")
+done < <(/usr/bin/find "$SKILLS_DIR" -type f \( -name 'SKILL.md' -o -path '*/references/*.md' \) | sort)
+
+if [[ ${#SKILL_FILES[@]} -eq 0 ]]; then
+  echo "No SKILL.md or references/*.md files found under $SKILLS_DIR" >&2
+  exit 1
+fi
+
+# Extract distinct https:// URLs across every file; strip trailing punctuation.
+# Portable read-into-array (avoids `mapfile`, which Bash 3.2 on macOS lacks).
+URLS=()
+while IFS= read -r line; do
+  URLS+=("$line")
+done < <(
+  for f in "${SKILL_FILES[@]}"; do
+    grep -oE 'https://[A-Za-z0-9][A-Za-z0-9._~:/?#@!$&'"'"'()*+,;=%-]*' "$f"
+  done \
+    | sed -E 's/[.,);'\'']+$//' \
+    | sort -u
+)
+
+if [[ ${#URLS[@]} -eq 0 ]]; then
+  echo "No URLs found across ${#SKILL_FILES[@]} file(s)" >&2
+  exit 1
+fi
+
+echo "Checking ${#URLS[@]} unique URL(s) across ${#SKILL_FILES[@]} file(s)..."
+failed=0
+for url in "${URLS[@]}"; do
+  check_url "$url" || failed=$((failed+1))
+done
+
+echo ""
+if [[ $failed -gt 0 ]]; then
+  echo "$failed URL(s) failed" >&2
+  exit 1
+fi
+echo "All URLs alive"

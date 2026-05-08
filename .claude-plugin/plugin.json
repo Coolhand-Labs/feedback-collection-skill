@@ -1,0 +1,23 @@
+{
+  "name": "feedback-collection",
+  "version": "0.1.0",
+  "description": "Find AI/LLM workflows and implement Coolhand human feedback collection",
+  "author": {
+    "name": "Coolhand Labs",
+    "url": "https://coolhandlabs.com"
+  },
+  "homepage": "https://coolhandlabs.com",
+  "repository": "https://github.com/Coolhand-Labs/feedback-collection-skill",
+  "license": "Apache-2.0",
+  "keywords": [
+    "coolhand",
+    "feedback",
+    "rlhf",
+    "human-feedback",
+    "llm",
+    "ai",
+    "openai",
+    "anthropic",
+    "evaluation"
+  ]
+}

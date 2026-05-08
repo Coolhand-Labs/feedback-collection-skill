@@ -1,0 +1,48 @@
+# Policy for which URLs may appear anywhere in this repo.
+#
+# Any http:// or https:// reference must start with one of the prefixes below.
+# `bin/check-trusted-urls` enforces this on every PR. Adding a prefix here is
+# a deliberate, reviewed expansion of the trust boundary — review changes to
+# this file with the same care as a dependency change.
+
+# First-party trust core: Coolhand-owned domains and repositories.
+# Bare-host entries (no trailing /) match only the exact URL. To allow paths
+# under a host, add the trailing-slash variant explicitly.
+coolhand:
+  - https://coolhandlabs.com
+  - https://coolhandlabs.com/
+  - https://github.com/Coolhand-Labs/
+  - https://raw.githubusercontent.com/Coolhand-Labs/
+
+# Non-Coolhand URLs that this repo legitimately depends on.
+# Each entry must justify why it is here. Drop entries that no longer have
+# an active reason.
+infrastructure:
+  # Apache-2.0 license boilerplate; these URLs are part of the license text
+  # and must remain verbatim for the license to be valid.
+  - http://www.apache.org/licenses/
+  - https://apache.org/licenses/
+
+  # Claude Code prerequisite link in README.
+  - https://claude.ai/
+
+  # Canonical CDN for the coolhand-js widget (referenced in implementation
+  # skills). Anchored to the @latest tag — pin a specific version here if we
+  # ever cut over to a non-@latest install. If we move to a Coolhand-hosted
+  # CDN, drop this entry.
+  - https://cdn.jsdelivr.net/npm/coolhand@latest/
+
+  # RFC-reserved test fixtures used by bin/check-skill-urls --self-test.
+  # example.com is IANA-operated; .invalid is RFC 2606 reserved.
+  - https://example.com
+  - https://nonexistent.invalid
+
+# Files excluded from the URL scan. Use only for vendored / snapshotted upstream
+# content that this repo does not author. Authored content must satisfy the
+# allowlist above — do not add authored files here to dodge violations.
+ignore_paths:
+  # Pristine snapshot of the Coolhand v2 OpenAPI spec from coolhandlabs.com/docs.
+  # Contains example URLs from third-party LLM providers (api.openai.com, etc.)
+  # embedded as documentation data. We don't author the file; editing it would
+  # defeat its purpose. Re-snapshot from upstream when the v2 spec changes.
+  - skills/self-hosted-feedback/references/coolhand-openapi-v2.json

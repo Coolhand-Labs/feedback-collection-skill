@@ -1,0 +1,8 @@
+{
+  "source_url": "https://coolhandlabs.com/docs",
+  "snapshot_taken_at": "2026-05-07",
+  "openapi_version": "3.0.1",
+  "api_version": "v2",
+  "spec_sha256": "10d63f78b69cbeec6d146580994436a4f1834e486cef2e9522d4ba81bdb94f1f",
+  "canonicalization": "json.dumps(spec, sort_keys=True, indent=2, ensure_ascii=False) + final newline; hash is SHA-256 of UTF-8 bytes"
+}

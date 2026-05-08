@@ -1,0 +1,1481 @@
+{
+  "components": {
+    "headers": {},
+    "parameters": {},
+    "schemas": {
+      "create_llm_request_log_feedback_params": {
+        "description": "## Feedback API - Field Guide\n\nAll fields are optional, but here's how to get the best results:\n\n### Matching Fields\n- **llm_request_log_id** 🎯 *Exact Match* - ID from the Coolhand API response when the original LLM request was logged\n- **llm_provider_unique_id** 🎯 *Exact Match* - The x-request-id from the LLM API response (e.g., \"req_xxxxxxx\")\n- **original_output** 🔍 *Fuzzy Match* - The original LLM response text. Provides fuzzy matching but isn't 100% reliable\n- **client_unique_id** 🔗 *Your Internal Matcher* - Connect to an identifier from your system for internal matching\n- **workload_hashid** 📦 *Workload Association* - Optional. Associate feedback with a specific workload to increase fuzzy match success rate\n\n### Quality Data\n- **revised_output** ⭐ *Best Signal* - End user revision of the LLM response. The highest value data for improving quality scores\n- **explanation** 💬 *Medium Signal* - End user explanation of why the response was good or bad. Valuable qualitative data\n- **sentiment** 🎭 *Preferred* - String sentiment: \"like\", \"dislike\", or \"neutral\". Preferred over boolean like\n- **like** 👍 *Low Signal (Deprecated)* - Boolean like/dislike. Use sentiment instead\n- **creator_unique_id** 👤 *User Tracking* - Unique ID to match feedback to the end user who created it\n- **collector** 🏷️ *Metadata* - Optional name/stamp identifying the collection method\n\n### Partial Feedback (Section-Specific)\n- **focus_section** 📍 *Required for partial* - The specific text section being rated. When present, this creates partial feedback\n- **focus_range** 📏 *Optional* - Character positions {start, end} to identify exact location\n- **parent_feedback_hashid** 🔗 *Optional* - Direct reference to parent feedback (skips auto-matching)",
+        "properties": {
+          "client_unique_id": {
+            "description": "🔗 Your Internal Matcher - Connect to an identifier from your system for internal matching. This helps you correlate feedback with your own request tracking system.",
+            "example": "email-service-1760025972258",
+            "type": "string"
+          },
+          "collector": {
+            "description": "🏷️ Metadata - Optional name/stamp identifying the collection method or SDK version. Helps track which system or version collected the feedback.",
+            "example": "coolhand-node-0.1.0",
+            "nullable": true,
+            "type": "string"
+          },
+          "coolhand_fingerprint_id": {
+            "description": "🔒 Optional - Unique fingerprint ID set automatically by the CoolhandJS SDK (https://github.com/Coolhand-Labs/coolhand-js). DO NOT set this field when calling the API directly - it is reserved for internal use by CoolhandJS and will be ignored or may cause unexpected behavior if set manually.",
+            "example": "fp_abc123xyz789",
+            "nullable": true,
+            "type": "string"
+          },
+          "creator_unique_id": {
+            "description": "👤 User Tracking - Unique ID to match feedback to the end user who created it. Useful for analyzing feedback patterns by user and preventing duplicate feedback.",
+            "example": "user-789",
+            "type": "string"
+          },
+          "explanation": {
+            "description": "💬 Medium Signal - End user explanation of why the response was good or bad. Valuable qualitative data for understanding user preferences and improving model performance. (5-5000 characters)",
+            "example": "Great response! Very helpful and accurate.",
+            "maxLength": 5000,
+            "minLength": 5,
+            "type": "string"
+          },
+          "focus_range": {
+            "description": "📏 Position Range - Character positions of the focus_section within original_output. Format: {start: integer, end: integer}. Useful when the same text appears multiple times in the response.",
+            "example": {
+              "end": 130,
+              "start": 100
+            },
+            "nullable": true,
+            "properties": {
+              "end": {
+                "description": "End character position (exclusive)",
+                "type": "integer"
+              },
+              "start": {
+                "description": "Start character position (0-indexed)",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "focus_section": {
+            "description": "📍 Partial Feedback - The specific text section this feedback targets. When present, indicates this is a partial feedback on a specific part of the response. Requires original_output to be provided.",
+            "example": "specific section of the response",
+            "nullable": true,
+            "type": "string"
+          },
+          "like": {
+            "description": "👍 Low Signal - Boolean like/dislike rating (deprecated, use sentiment instead). Use true for positive feedback, false for negative, or null/omit for neutral.",
+            "example": true,
+            "type": "boolean"
+          },
+          "llm_provider_unique_id": {
+            "description": "🎯 Exact Match - The x-request-id from the LLM API response (e.g., 'req_xxxxxxx'). Provides exact matching to connect feedback to the specific LLM provider request.",
+            "example": "req_1234567890abcdef",
+            "type": "string"
+          },
+          "llm_request_log_id": {
+            "description": "🎯 Exact Match - ID from the Coolhand API response when the original LLM request was logged. Provides exact matching to connect feedback to a specific logged request.",
+            "example": 123,
+            "type": "integer"
+          },
+          "original_output": {
+            "description": "🔍 Fuzzy Match - The original LLM response text. Provides fuzzy matching but isn't 100% reliable. Use when you don't have llm_provider_unique_id or llm_request_log_id. (PostgreSQL text field - up to 1GB)",
+            "example": "Dear John Doe,\n\nThank you for reaching out to us regarding the issue with your recent order #12345. I am sorry to hear that the product arrived damaged and is not working properly. Please accept my sincere apologies for any inconvenience this may have caused.\n\nAs a valued customer of ours for the past 3 years, your satisfaction is incredibly important to us. Rest assured, we are committed to resolving this issue promptly for you. I will arrange for a replacement of the damaged item to be sent out to you as soon as possible. You should receive a confirmation email with the tracking details shortly.\n\nIf there is anything else we can assist you with, please do not hesitate to let us know. We truly appreciate your loyalty and thank you for bringing this matter to our attention.\n\nBest regards,\n\n[Your Name]\nCustomer Service Team",
+            "type": "string"
+          },
+          "parent_feedback_hashid": {
+            "description": "🔗 Direct Parent Reference - Hashid of an existing parent feedback to associate this partial feedback with. If provided, skips automatic parent matching. If invalid, a warning is added but feedback is still saved.",
+            "example": "xyz789abc123",
+            "nullable": true,
+            "type": "string"
+          },
+          "revised_output": {
+            "description": "⭐ Best Signal - End user revision of the LLM response. The highest value data for improving quality scores. This is the user's improved version of what the AI should have said. (PostgreSQL text field - up to 1GB)",
+            "example": "This is a dummy revised output",
+            "type": "string"
+          },
+          "sentiment": {
+            "description": "🎭 Sentiment Rating - String sentiment value: 'like', 'dislike', or 'neutral'. Preferred over boolean 'like' field. Takes precedence if both are provided.",
+            "enum": [
+              "like",
+              "dislike",
+              "neutral"
+            ],
+            "example": "like",
+            "nullable": true,
+            "type": "string"
+          },
+          "workload_hashid": {
+            "description": "📦 Workload Association - Hashid of the workload to associate this feedback with. Providing a workload increases the fuzzy match success rate by narrowing the search scope. If the workload doesn't exist or doesn't belong to your client, a warning will be added but the feedback will still be saved.",
+            "example": "abc123def456",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "create_llm_request_log_params": {
+        "properties": {
+          "collector": {
+            "description": "Optional name/stamp identifying the collection method (e.g., 'nodejs-sdk-v1.2.0', 'ruby-gem-v2.1.3')",
+            "example": "ruby-gem-v2.1.3",
+            "nullable": true,
+            "type": "string"
+          },
+          "raw_request": {
+            "additionalProperties": true,
+            "description": "Complete raw request data in JSON format. Can contain any structure.",
+            "example": {
+              "headers": {},
+              "id": 1,
+              "method": "POST",
+              "request_body": {
+                "messages": [
+                  {
+                    "content": "Hello, world!",
+                    "role": "user"
+                  }
+                ],
+                "model": "gpt-3.5-turbo",
+                "temperature": 0.7
+              },
+              "response_body": {
+                "choices": [
+                  {
+                    "message": {
+                      "content": "Hello! How can I help you today?"
+                    }
+                  }
+                ]
+              },
+              "status_code": 200,
+              "timestamp": "2025-08-20T14:54:36.864Z",
+              "url": "https://api.openai.com/v1/chat/completions"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "raw_request"
+        ],
+        "type": "object"
+      },
+      "llm_request_log": {
+        "properties": {
+          "collector": {
+            "description": "Optional name/stamp identifying the collection method (e.g., 'nodejs-sdk-v1.2.0', 'ruby-gem-v2.1.3')",
+            "example": "nodejs-sdk-v1.2.0",
+            "nullable": true,
+            "type": "string"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/shared_created_at"
+          },
+          "id": {
+            "description": "LLM Request Log ID",
+            "example": 96312,
+            "type": "integer"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/shared_updated_at"
+          }
+        },
+        "type": "object"
+      },
+      "llm_request_log_feedback": {
+        "properties": {
+          "client_id": {
+            "description": "Hashid of the client that owns this feedback entry.",
+            "example": "xyz789abc123",
+            "type": "string"
+          },
+          "client_unique_id": {
+            "description": "🔗 Your Internal Matcher - Connect to an identifier from your system for internal matching. This helps you correlate feedback with your own request tracking system.",
+            "example": "email-service-1760025972258",
+            "nullable": true,
+            "type": "string"
+          },
+          "collector": {
+            "description": "🏷️ Metadata - Optional name/stamp identifying the collection method or SDK version. Helps track which system or version collected the feedback.",
+            "example": "coolhand-node-0.1.0",
+            "nullable": true,
+            "type": "string"
+          },
+          "coolhand_fingerprint_id": {
+            "description": "🔒 Optional - Unique fingerprint ID set by the CoolhandJS SDK (https://github.com/Coolhand-Labs/coolhand-js). DO NOT set this field when calling the API directly - it is reserved for CoolhandJS.",
+            "example": "fp_abc123xyz789",
+            "nullable": true,
+            "type": "string"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/shared_created_at"
+          },
+          "creator_unique_id": {
+            "description": "👤 User Tracking - Unique ID to match feedback to the end user who created it. Useful for analyzing feedback patterns by user and preventing duplicate feedback.",
+            "example": "user-789",
+            "nullable": true,
+            "type": "string"
+          },
+          "explanation": {
+            "description": "💬 Medium Signal - End user explanation of why the response was good or bad. Valuable qualitative data for understanding user preferences and improving model performance.",
+            "example": "Great response! Very helpful and accurate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Unique hashid identifier for the feedback entry. Use this to reference the feedback in update requests.",
+            "example": "abc123xyz789",
+            "type": "string"
+          },
+          "like": {
+            "description": "👍 Low Signal - Boolean like/dislike rating (deprecated, use sentiment instead). Computed from sentiment for backwards compatibility: like=true, dislike=false, neutral/nil=nil.",
+            "example": true,
+            "nullable": true,
+            "type": "boolean"
+          },
+          "llm_provider_unique_id": {
+            "description": "🎯 Exact Match - The x-request-id from the LLM API response (e.g., 'req_xxxxxxx'). Provides exact matching to connect feedback to the specific LLM provider request.",
+            "example": "req_1234567890abcdef",
+            "nullable": true,
+            "type": "string"
+          },
+          "llm_request_log_id": {
+            "description": "🎯 Exact Match - ID from the Coolhand API response when the original LLM request was logged. Provides exact matching to connect feedback to a specific logged request.",
+            "example": 17041,
+            "nullable": true,
+            "type": "integer"
+          },
+          "original_output": {
+            "description": "🔍 Fuzzy Match - The original LLM response text. Provides fuzzy matching but isn't 100% reliable. Use when you don't have llm_provider_unique_id or llm_request_log_id.",
+            "example": "Dear John Doe,\n\nThank you for reaching out to us regarding the issue with your recent order #12345...",
+            "nullable": true,
+            "type": "string"
+          },
+          "revised_output": {
+            "description": "⭐ Best Signal - End user revision of the LLM response. The highest value data for improving quality scores. This is the user's improved version of what the AI should have said.",
+            "example": "This is a dummy revised output",
+            "nullable": true,
+            "type": "string"
+          },
+          "sentiment": {
+            "description": "🎭 Sentiment Rating - String sentiment value: 'like', 'dislike', or 'neutral'. Preferred over boolean 'like' field. Takes precedence if both are provided.",
+            "enum": [
+              "like",
+              "dislike",
+              "neutral"
+            ],
+            "example": "like",
+            "nullable": true,
+            "type": "string"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/shared_updated_at"
+          },
+          "workload_id": {
+            "description": "📦 Workload Association - ID of the workload this feedback is associated with. Set automatically when a valid workload_hashid is provided in the request.",
+            "example": 50394,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "llm_request_log_full": {
+        "properties": {
+          "collector": {
+            "description": "Optional name/stamp identifying the collection method (e.g., 'nodejs-sdk-v1.2.0', 'ruby-gem-v2.1.3')",
+            "example": "nodejs-sdk-v1.2.0",
+            "nullable": true,
+            "type": "string"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/shared_created_at"
+          },
+          "id": {
+            "description": "LLM Request Log ID",
+            "example": 96312,
+            "type": "integer"
+          },
+          "raw_request": {
+            "description": "Complete raw request data in JSON format",
+            "example": {
+              "headers": {},
+              "id": 1,
+              "method": "POST",
+              "protocol": "fetch",
+              "request_body": {
+                "messages": [
+                  {
+                    "content": "You are a helpful customer service representative...",
+                    "role": "user"
+                  }
+                ],
+                "model": "gpt-3.5-turbo",
+                "stream": false,
+                "temperature": 0.7
+              },
+              "response_body": {
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "content": "Dear John Doe,\n\nThank you for reaching out...",
+                      "role": "assistant"
+                    }
+                  }
+                ],
+                "created": 1755701677,
+                "id": "chatcmpl-C6eUvEvH5k5JAPTNKluyJgf4xEHaz",
+                "model": "gpt-3.5-turbo-0125",
+                "object": "chat.completion",
+                "usage": {
+                  "completion_tokens": 175,
+                  "prompt_tokens": 195,
+                  "total_tokens": 370
+                }
+              },
+              "status_code": 200,
+              "timestamp": "2025-08-20T14:54:36.864Z",
+              "url": "https://api.openai.com/v1/chat/completions"
+            },
+            "type": "object"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/shared_updated_at"
+          }
+        },
+        "type": "object"
+      },
+      "shared_confirmed_at": {
+        "description": "Date and time when object was confirmed. Use RFC 3339 format.",
+        "format": "date-time",
+        "nullable": true,
+        "type": "string"
+      },
+      "shared_created_at": {
+        "description": "Date and time when object was created formatted according to RFC 3339. Timezone is UTC ",
+        "example": "2026-04-30T16:19:51+00:00",
+        "format": "date-time",
+        "type": "string"
+      },
+      "shared_destroy_attr": {
+        "description": "Set to true if you want to **hard delete** this object",
+        "type": "boolean"
+      },
+      "shared_discarded_at_attr": {
+        "description": "Set to current time if you want to **soft delete** this object. Use RFC 3339 format.",
+        "format": "date-time",
+        "nullable": true,
+        "type": "string"
+      },
+      "shared_expired_at": {
+        "description": "Date and time when object was EXPIRED. Use RFC 3339 format.",
+        "format": "date-time",
+        "nullable": true,
+        "type": "string"
+      },
+      "shared_missing_property_error": {
+        "properties": {
+          "errors": {
+            "additionalProperties": {
+              "example": [
+                "can't be blank"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "shared_not_found_error": {
+        "properties": {
+          "errors": {
+            "additionalProperties": false,
+            "description": "Contains error details.",
+            "example": {
+              "chapterfeedback": [
+                "Couldn't locate the ChapterFeedback record"
+              ]
+            },
+            "patternProperties": {
+              "^[a-z]+$": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "shared_success": {
+        "properties": {
+          "message": {
+            "example": "User deleted.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "shared_unauthorized_error": {
+        "properties": {
+          "message": {
+            "example": "Unauthorized",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "shared_unprocessable_entity_error": {
+        "description": "Error object",
+        "properties": {
+          "errors": {
+            "description": "Contains error details.",
+            "properties": {
+              "__field_name__": {
+                "description": "Instead of field `__field_name__` you can expect a field name in the request body which caused an error.\ne.g. \"email\", \"password\".\nThere could be multiple errors for a single field.\nThere could be multiple `__field_name__`.\nIf it is impossible to map error to a key in the request body, `__field_name__` will be `system`.\n",
+                "example": [
+                  "Password should be at least 6 chars long",
+                  "Password should contain at least one number"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "shared_updated_at": {
+        "description": "Date and time when object was updated formatted according to RFC 3339. Timezone is UTC ",
+        "example": "2026-04-30T16:19:51+00:00",
+        "format": "date-time",
+        "type": "string"
+      }
+    },
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "description": "API key for client authentication",
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      },
+      "bearerAuth": {
+        "description": "Bearer token authentication using API key",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "LLM Request Logging API Documentation.\n\n# Introduction\nThis API allows clients to log and store request/response data from Large Language Model (LLM) API calls\nfor monitoring, analysis, and debugging purposes. The API accepts any JSON structure in the `raw_request`\nfield, making it flexible for different LLM providers and use cases.\n\n# Authentication\nAPI uses **API Key** authentication. Clients are issued unique API keys that must be included\nin requests using one of these methods:\n\n- **X-API-Key header**: `X-API-Key: your_api_key_here`\n- **Authorization Bearer header**: `Authorization: Bearer your_api_key_here`\n- **Query parameter**: `?api_key=your_api_key_here`\n\nContact your administrator to obtain an API key.\n\n<SecurityDefinitions />\n\n# Common Use Cases\n\n## OpenAI API Logging\nLog requests and responses from OpenAI's chat completions, embeddings, and other endpoints.\n\n## Anthropic Claude Logging\nStore conversation data and model responses from Claude API calls.\n\n## Custom LLM Provider Logging\nThe flexible JSON structure supports any LLM provider's request/response format.\n\n## Analytics and Monitoring\nAggregate usage statistics, token consumption, and performance metrics across LLM calls.\n\n# API Error Handling\n  ## Error Response Structure\n  When interacting with the LLM Request Logging API, you'll encounter standard error response formats\n  for different types of failures.\n\n  <SchemaDefinition schemaRef=\"#/components/schemas/shared_unprocessable_entity_error\" />\n\n  ## HTTP Status Codes\n  Understanding the HTTP status codes for this API:\n\n  |HTTP Status Code          | Description\n  |--------------------------|-------------------------------\n  |`201` Created             | LLM request log successfully created\n  |`400` Bad Request         | Malformed request or invalid JSON structure\n  |`401` Unauthorized        | Missing, invalid, or expired API key\n  |`422` Unprocessable Entity| Validation error - required fields missing or invalid format\n  |`5xx` Server Errors       | Server-side issues - please report these for investigation\n\n",
+    "title": "Coolhand LLM Request Logging API",
+    "version": "v2",
+    "x-logo": {
+      "altText": "coolhand"
+    }
+  },
+  "openapi": "3.0.1",
+  "paths": {
+    "/api/v2/inference_apis": {
+      "get": {
+        "description": "Returns a list of all inference models tracked by Coolhand, including pricing\nmetadata in both per-token and per-million-token formats.\n\n**Authentication:**\nAuthentication is optional. Unauthenticated callers are rate-limited (see below).\nAuthenticated callers bypass the rate limit entirely. Pass an API key via the\n`X-API-Key` header, as a `Bearer` token in the `Authorization` header, or as\nthe `api_key` query parameter. Sign up at coolhand.ai to get a free API key.\n\n**How pricing data is gathered:**\nPricing data is collected by the Godfrey agent, an automated system that\nperiodically fetches and parses pricing pages published by model providers.\nAll records undergo human review before being considered authoritative.\nThe `sources` field on each record links to the original provider pricing\npage used as the data source.\n\n**Cost units:**\n`per_input_cost_per_token` and `per_output_cost_per_token` are raw USD\ncost-per-token values. The `per_input_cost_per_million` and\n`per_output_cost_per_million` fields multiply these by 1,000,000 for\nreadability and are equivalent to the \"per 1M tokens\" pricing commonly\npublished by providers.\n\n**Rate limiting:**\nUnauthenticated requests are rate limited to 1 request per minute per IP address.\nExceeding the limit returns a `429 Too Many Requests` response. Authenticated\nrequests are never rate limited.\n",
+        "operationId": "list_inference_model_pricing_metadata",
+        "parameters": [
+          {
+            "description": "API key for authentication",
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer token with API key",
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "API key as query parameter",
+            "in": "query",
+            "name": "api_key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "available_for_bakeoff": {
+                        "description": "Whether this model is available for Coolhand comparison runs (bakeoffs)",
+                        "type": "boolean"
+                      },
+                      "created_at": {
+                        "description": "ISO 8601 timestamp when this record was first created",
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "deprecated_at": {
+                        "description": "ISO 8601 timestamp when the model was or will be deprecated by the provider. Null if active.",
+                        "format": "date-time",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "deprecation_notes": {
+                        "description": "Additional context about the deprecation, such as a recommended successor model",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "display_name": {
+                        "description": "Human-readable model name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "description": "Internal record ID",
+                        "type": "integer"
+                      },
+                      "model": {
+                        "description": "Model identifier passed in API calls (e.g. 'gpt-4o', 'claude-3-5-sonnet-20241022')",
+                        "type": "string"
+                      },
+                      "per_input_cost_per_million": {
+                        "description": "Cost per 1 million input tokens in USD",
+                        "format": "float",
+                        "type": "number"
+                      },
+                      "per_input_cost_per_token": {
+                        "description": "Cost per input token in USD",
+                        "format": "float",
+                        "type": "number"
+                      },
+                      "per_output_cost_per_million": {
+                        "description": "Cost per 1 million output tokens in USD",
+                        "format": "float",
+                        "type": "number"
+                      },
+                      "per_output_cost_per_token": {
+                        "description": "Cost per output token in USD",
+                        "format": "float",
+                        "type": "number"
+                      },
+                      "provider": {
+                        "description": "Provider name (e.g. 'OpenAI', 'Anthropic', 'Google')",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "source_api": {
+                        "description": "Provider API identifier used to route requests (e.g. 'openai_api', 'anthropic_api')",
+                        "type": "string"
+                      },
+                      "sources": {
+                        "description": "URL to the provider pricing page used as the source for this record",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "description": "ISO 8601 timestamp when this record was last updated",
+                        "format": "date-time",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "success - unauthenticated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "unauthorized - invalid API key"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "rate limit exceeded"
+          }
+        },
+        "summary": "List inference model pricing metadata",
+        "tags": [
+          "Inference APIs"
+        ]
+      }
+    },
+    "/api/v2/llm_request_log_feedbacks": {
+      "post": {
+        "description": "Creates a new feedback entry for LLM request monitoring and improvement purposes.\n\n**Field Guide - All fields are optional, but here's how to get the best results:**\n\n### Matching Fields\n- **llm_request_log_id** 🎯 *Exact Match* - ID from the Coolhand API response when the original LLM request was logged. Provides exact matching.\n- **llm_provider_unique_id** 🎯 *Exact Match* - The x-request-id from the LLM API response (e.g., \"req_xxxxxxx\")\n- **original_output** 🔍 *Fuzzy Match* - The original LLM response text. Provides fuzzy matching but isn't 100% reliable.\n- **client_unique_id** 🔗 *Your Internal Matcher* - Connect to an identifier from your system for internal matching\n- **workload_hashid** 📦 *Workload Association* - Optional. Associate feedback with a specific workload to increase fuzzy match success rate\n\n### Quality Data\n- **revised_output** ⭐ *Best Signal* - End user revision of the LLM response. The highest value data for improving quality scores.\n- **explanation** 💬 *Medium Signal* - End user explanation of why the response was good or bad. Valuable qualitative data.\n- **like** 👍 *Low Signal* - Boolean like/dislike. Lower quality signal but easy for users to provide.\n- **creator_unique_id** 👤 *User Tracking* - Unique ID to match feedback to the end user who created it\n- **collector** 🏷️ *Metadata* - Optional name/stamp identifying the collection method (e.g., \"coolhand-node-0.1.0\")\n",
+        "operationId": "create_llm_request_log_feedback",
+        "parameters": [
+          {
+            "description": "API key for authentication",
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer token with API key",
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "API key as query parameter",
+            "in": "query",
+            "name": "api_key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "🏷️ Optional collector identifier (can also be provided in request body)",
+            "in": "query",
+            "name": "collector",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "llm_request_log_feedback": {
+                    "properties": {
+                      "client_unique_id": {
+                        "description": "🔗 Your Internal Matcher - Connect to an identifier from your system for internal matching. This helps you correlate feedback with your own request tracking system.",
+                        "example": "email-service-1760025972258",
+                        "type": "string"
+                      },
+                      "collector": {
+                        "description": "🏷️ Metadata - Optional name/stamp identifying the collection method or SDK version. Helps track which system or version collected the feedback.",
+                        "example": "coolhand-node-0.1.0",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "coolhand_fingerprint_id": {
+                        "description": "🔑 Session/Device ID - Unique identifier for the session or device. Used for parent matching when creating partial feedback.",
+                        "example": "fp-abc123xyz",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "creator_unique_id": {
+                        "description": "👤 User Tracking - Unique ID to match feedback to the end user who created it. Useful for analyzing feedback patterns by user and preventing duplicate feedback.",
+                        "example": "user-789",
+                        "type": "string"
+                      },
+                      "explanation": {
+                        "description": "💬 Medium Signal - End user explanation of why the response was good or bad. Valuable qualitative data for understanding user preferences and improving model performance. (optional, max 5000 characters)",
+                        "example": "Great response! Very helpful and accurate.",
+                        "maxLength": 5000,
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "focus_range": {
+                        "description": "📍 Position Range - Character positions of the focus_section within original_output. Useful when the same text appears multiple times.",
+                        "example": {
+                          "end": 150,
+                          "start": 100
+                        },
+                        "nullable": true,
+                        "properties": {
+                          "end": {
+                            "description": "End character position (exclusive)",
+                            "type": "integer"
+                          },
+                          "start": {
+                            "description": "Start character position (0-indexed)",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "focus_section": {
+                        "description": "🎯 Partial Feedback - The specific text section being rated. When provided, creates a FeedbackPartial attached to a parent feedback. The parent is automatically found or created based on original_output and user identifiers.",
+                        "example": "This specific sentence needs improvement.",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "like": {
+                        "description": "👍 Low Signal - Boolean like/dislike rating. Lower quality signal but easy for users to provide. Use true for positive feedback, false for negative, or null/omit for neutral.",
+                        "type": "boolean"
+                      },
+                      "llm_provider_unique_id": {
+                        "description": "🎯 Exact Match - The x-request-id from the LLM API response (e.g., 'req_xxxxxxx'). Provides exact matching to connect feedback to the specific LLM provider request.",
+                        "example": "req_1234567890abcdef",
+                        "type": "string"
+                      },
+                      "llm_request_log_id": {
+                        "description": "🎯 Exact Match - ID from the Coolhand API response when the original LLM request was logged. Provides exact matching to connect feedback to a specific logged request.",
+                        "type": "integer"
+                      },
+                      "original_output": {
+                        "description": "🔍 Fuzzy Match - The original LLM response text. Provides fuzzy matching but isn't 100% reliable. Use when you don't have llm_provider_unique_id or llm_request_log_id. (PostgreSQL text field - up to 1GB)",
+                        "example": "Dear John Doe,\n\nThank you for reaching out to us regarding the issue with your recent order #12345...",
+                        "type": "string"
+                      },
+                      "revised_output": {
+                        "description": "⭐ Best Signal - End user revision of the LLM response. The highest value data for improving quality scores. This is the user's improved version of what the AI should have said. (PostgreSQL text field - up to 1GB)",
+                        "example": "This is a dummy revised output",
+                        "type": "string"
+                      },
+                      "sentiment": {
+                        "description": "🎭 Sentiment - Explicit sentiment value: 'like', 'dislike', or 'neutral'. Takes precedence over the 'like' boolean if both are provided. Prefer using sentiment over like for new integrations.",
+                        "enum": [
+                          "like",
+                          "dislike",
+                          "neutral"
+                        ],
+                        "example": "like",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "workload_hashid": {
+                        "description": "📦 Workload Association - Optional. Hashid of the workload to associate this feedback with. Providing a workload increases the fuzzy match success rate. If invalid, a warning will be added but feedback saved.",
+                        "example": "abc123def456",
+                        "nullable": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "llm_request_log_feedback"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Response when creating partial feedback. Includes the parent feedback with created_partial_id indicating which FeedbackPartial was created.",
+                  "properties": {
+                    "client_id": {
+                      "type": "integer"
+                    },
+                    "client_unique_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "collector": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "coolhand_fingerprint_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "created_partial_id": {
+                      "description": "Hashid of the FeedbackPartial that was created. Use this ID with PATCH requests to update the partial.",
+                      "type": "string"
+                    },
+                    "creator_unique_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "feedback_partials": {
+                      "description": "Array of FeedbackPartials attached to this parent",
+                      "items": {
+                        "properties": {
+                          "client_id": {
+                            "type": "integer"
+                          },
+                          "coolhand_fingerprint_id": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "creator_unique_id": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "focus_range": {
+                            "nullable": true,
+                            "properties": {
+                              "end": {
+                                "type": "integer"
+                              },
+                              "start": {
+                                "type": "integer"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "focus_section": {
+                            "description": "The highlighted text section",
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "FeedbackPartial hashid",
+                            "type": "string"
+                          },
+                          "like": {
+                            "description": "Computed from sentiment for backwards compatibility",
+                            "nullable": true,
+                            "type": "boolean"
+                          },
+                          "llm_request_log_feedback_id": {
+                            "description": "Parent feedback hashid",
+                            "type": "string"
+                          },
+                          "sentiment": {
+                            "enum": [
+                              "like",
+                              "dislike",
+                              "neutral"
+                            ],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "format": "date-time",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "id": {
+                      "description": "Parent feedback hashid",
+                      "type": "string"
+                    },
+                    "like": {
+                      "nullable": true,
+                      "type": "boolean"
+                    },
+                    "llm_provider_unique_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "llm_request_log_id": {
+                      "nullable": true,
+                      "type": "integer"
+                    },
+                    "original_output": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "revised_output": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sentiment": {
+                      "description": "Parent sentiment (may be nil for placeholder)",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "warnings": {
+                      "description": "Warnings about auto-created placeholder parent or other issues",
+                      "items": {
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "timestamp": {
+                            "format": "date-time",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "workload_id": {
+                      "nullable": true,
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "success with partial feedback (focus_section)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "unauthorized - invalid API key"
+          }
+        },
+        "summary": "Create LLM Request Log Feedback",
+        "tags": [
+          "LLM Request Log Feedbacks"
+        ]
+      }
+    },
+    "/api/v2/llm_request_log_feedbacks/{id}": {
+      "patch": {
+        "description": "Updates an existing feedback entry. Only specific fields can be updated - identity fields are immutable.\n\n**Partial Feedback Updates:**\nWhen `partial_id` is provided in the request body, the update is applied to that specific FeedbackPartial\ninstead of the parent feedback. This is useful when adding explanations to partial feedback (highlighted text sections).\nThe response will include `updated_partial_id` to confirm which partial was updated.\n\n**Updatable Fields (Parent Feedback):**\n- **like** - Boolean like/dislike rating\n- **explanation** - End user explanation\n- **revised_output** - End user revision of the LLM response\n- **original_output** - The original LLM response text\n- **llm_provider_unique_id** - The x-request-id from the LLM API response\n- **collector** - Collection method identifier\n- **client_unique_id** - Your internal request identifier\n- **workload_hashid** - Associate with a workload (or clear by setting to null/empty)\n\n**Updatable Fields (FeedbackPartial - when partial_id is provided):**\n- **explanation** - End user explanation for this specific partial\n- **sentiment** - Sentiment value (like/dislike/neutral)\n- **like** - Boolean (automatically converted to sentiment)\n\n**Immutable Fields (cannot be updated):**\n- creator_unique_id\n- llm_request_log_id\n\n**Note:** After a successful update, if the feedback is not already matched to a log and has original_output,\nthe fuzzy matching job will be re-triggered to attempt matching.\n",
+        "operationId": "update_llm_request_log_feedback",
+        "parameters": [
+          {
+            "description": "Feedback hashid",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "API key for authentication",
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer token with API key",
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "llm_request_log_feedback": {
+                    "properties": {
+                      "client_unique_id": {
+                        "description": "🔗 Your internal request identifier",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "collector": {
+                        "description": "🏷️ Collection method identifier",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "explanation": {
+                        "description": "💬 End user explanation (max 5000 characters)",
+                        "maxLength": 5000,
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "like": {
+                        "description": "👍 Boolean like/dislike rating",
+                        "nullable": true,
+                        "type": "boolean"
+                      },
+                      "llm_provider_unique_id": {
+                        "description": "🎯 The x-request-id from the LLM API response",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "original_output": {
+                        "description": "🔍 The original LLM response text",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "partial_id": {
+                        "description": "🎯 FeedbackPartial hashid - when provided, updates the partial feedback instead of the parent. Used to add explanations to specific highlighted sections. Get this from created_partial_id in the POST response.",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "revised_output": {
+                        "description": "⭐ End user revision of the LLM response",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "sentiment": {
+                        "description": "🎭 Sentiment value for partial feedback (when partial_id is provided): 'like', 'dislike', or 'neutral'",
+                        "enum": [
+                          "like",
+                          "dislike",
+                          "neutral"
+                        ],
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "workload_hashid": {
+                        "description": "📦 Workload hashid to associate with (set to null/empty to clear)",
+                        "nullable": true,
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "client_id": {
+                      "type": "integer"
+                    },
+                    "client_unique_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "collector": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "coolhand_fingerprint_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "creator_unique_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "feedback_partials": {
+                      "description": "Array of feedback partials attached to this parent",
+                      "items": {
+                        "properties": {
+                          "client_id": {
+                            "type": "integer"
+                          },
+                          "coolhand_fingerprint_id": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "creator_unique_id": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "focus_range": {
+                            "nullable": true,
+                            "properties": {
+                              "end": {
+                                "type": "integer"
+                              },
+                              "start": {
+                                "type": "integer"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "focus_section": {
+                            "description": "The highlighted text section",
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "FeedbackPartial hashid",
+                            "type": "string"
+                          },
+                          "like": {
+                            "nullable": true,
+                            "type": "boolean"
+                          },
+                          "llm_request_log_feedback_id": {
+                            "description": "Parent feedback hashid",
+                            "type": "string"
+                          },
+                          "sentiment": {
+                            "enum": [
+                              "like",
+                              "dislike",
+                              "neutral"
+                            ],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "format": "date-time",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "id": {
+                      "description": "Parent feedback hashid",
+                      "type": "string"
+                    },
+                    "like": {
+                      "nullable": true,
+                      "type": "boolean"
+                    },
+                    "llm_provider_unique_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "llm_request_log_id": {
+                      "nullable": true,
+                      "type": "integer"
+                    },
+                    "original_output": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "revised_output": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sentiment": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "updated_partial_id": {
+                      "description": "Hashid of the partial that was updated",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "workload_id": {
+                      "nullable": true,
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "success - updating a partial feedback"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "not found - invalid partial_id"
+          }
+        },
+        "summary": "Update LLM Request Log Feedback",
+        "tags": [
+          "LLM Request Log Feedbacks"
+        ]
+      }
+    },
+    "/api/v2/llm_request_logs": {
+      "post": {
+        "description": "Creates a new LLM request log entry for monitoring and analysis purposes.",
+        "operationId": "create_llm_request_log",
+        "parameters": [
+          {
+            "description": "API key for authentication",
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer token with API key",
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "API key as query parameter",
+            "in": "query",
+            "name": "api_key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "llm_request_log": {
+                    "properties": {
+                      "collector": {
+                        "description": "Optional name/stamp identifying the collection method",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "raw_request": {
+                        "additionalProperties": true,
+                        "description": "Complete raw request data in JSON format",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "raw_request"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "llm_request_log"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "collector": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "updated_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "success with collector field"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "unauthorized - invalid API key"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "errors": {
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "unprocessable entity - invalid JSON in raw_request"
+          }
+        },
+        "summary": "Create LLM Request Log",
+        "tags": [
+          "LLM Request Logs"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "API server",
+      "url": "http://{productionHost}",
+      "variables": {
+        "stageHost": {
+          "default": "coolhandlabs.com"
+        }
+      }
+    },
+    {
+      "description": "Local server",
+      "url": "http://{defaultHost}",
+      "variables": {
+        "defaultHost": {
+          "default": "0.0.0.0:3000"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "description": "API endpoints for collecting user feedback on LLM request/response quality and accuracy",
+      "name": "LLM Request Log Feedbacks"
+    },
+    {
+      "description": "<SchemaDefinition schemaRef=\"#/components/schemas/llm_request_log_feedback\" />",
+      "name": "llm_request_log_feedback_model",
+      "x-displayName": "LLM Request Log Feedback Model"
+    },
+    {
+      "description": "API endpoints for logging and storing LLM (Large Language Model) request/response data",
+      "name": "LLM Request Logs"
+    },
+    {
+      "description": "<SchemaDefinition schemaRef=\"#/components/schemas/llm_request_log\" />",
+      "name": "llm_request_log_model",
+      "x-displayName": "LLM Request Log Model"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "LLM Logging API",
+      "tags": [
+        "LLM Request Logs",
+        "LLM Request Log Feedbacks"
+      ]
+    },
+    {
+      "name": "Models",
+      "tags": [
+        "llm_request_log_model",
+        "llm_request_log_feedback_model",
+        "client_model"
+      ]
+    }
+  ]
+}

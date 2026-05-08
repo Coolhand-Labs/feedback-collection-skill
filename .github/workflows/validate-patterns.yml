@@ -1,0 +1,28 @@
+name: Validate detection patterns
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/feedback-collection/detection-patterns/*.yml"
+      - "bin/validate-patterns"
+      - ".github/workflows/validate-patterns.yml"
+  pull_request:
+    paths:
+      - "skills/feedback-collection/detection-patterns/*.yml"
+      - "bin/validate-patterns"
+      - ".github/workflows/validate-patterns.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - run: ruby bin/validate-patterns
+      - run: ruby bin/validate-patterns --self-test
