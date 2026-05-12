@@ -98,7 +98,10 @@ Always include in every feedback call:
 
 - `collector: "<your-app-slug>-manual"` — replace `<your-app-slug>` with a slug identifying this integration. Helps Coolhand analytics distinguish your data.
 - `creator_unique_id` — the SHA-256 hashing pattern from the planner's Phase 3.
-- The best available matching field (`llm_request_log_id` if SDK auto-monitor is on; otherwise `llm_provider_unique_id` from the response header).
+- The best available matching field (`llm_request_log_id` if SDK auto-monitor is on; otherwise `llm_provider_unique_id` from the response header). Access `llm_request_log_id` immediately after the inference call returns:
+  - Ruby: `Coolhand.last_log_id`
+  - Python: `coolhand.context.last_log_id()`
+  - Node.js: `response.coolhand_log_id`
 - **At least one of `client_unique_id` or `original_output`** — the floor rule from the planner's Phase 3 applies in implementation, not just in planning. Both is better than one when both are available.
 - The highest achievable signal field (`revised_output` > `explanation` > `sentiment`).
 - For binary signals, use `sentiment` (`"like"` / `"dislike"` / `"neutral"`), not the deprecated `like` boolean.

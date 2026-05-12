@@ -75,6 +75,8 @@ For each AI inference call found, note:
 4. Whether any existing downstream event naturally signals quality: a purchase, save, share, accept/reject action, copy to clipboard, delete/dismiss, retry
 5. Whether a user identity is accessible in that code path
 
+If a file appears to make inference calls but its role is ambiguous — e.g., it looks like a relay, adapter, or proxy forwarding requests on behalf of external callers — read the full file before drawing a conclusion. Check whether this application *consumes* the inference output itself or merely forwards it. Resolve every such ambiguity yourself before presenting findings; do not ask the user to confirm scope until every candidate file has been examined.
+
 ---
 
 ### Phase 2: Tech Stack Detection
@@ -97,6 +99,11 @@ For each AI workflow found, design a strategy covering matching, signal quality,
 Use the best available option, in priority order. **At least one of `client_unique_id` or `original_output` must accompany every feedback submission as a backstop.** The top two are upgrades when available.
 
 1. **`llm_request_log_id`** *(best)* — available if the Coolhand server SDK is installed and auto-monitoring calls. The SDK captures this ID on each response automatically. Adding the SDK gives you this for free going forward.
+
+   When `existing_coolhand` markers are detected in Phase 1, the SDK is already installed and the interceptor is already active — do not ask whether it auto-monitors. Access the captured ID immediately after the inference call returns:
+   - Ruby: `Coolhand.last_log_id` (thread-safe; returns the log ID for the most recent intercepted call on this thread, or `nil`)
+   - Python: `coolhand.context.last_log_id()`
+   - Node.js: `response.coolhand_log_id` (added to the response wrapper by the monitor)
 
 2. **`llm_provider_unique_id`** *(second best)* — the `x-request-id` header returned by the LLM provider. Capture it from the response and store it alongside the output so it can be included when feedback is submitted later.
    - OpenAI (Python): `response.response_headers.get('x-request-id')`
