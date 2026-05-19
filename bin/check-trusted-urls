@@ -41,7 +41,7 @@ URL_REGEX = %r{https?://[A-Za-z0-9][A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*}
 TRAILING_PUNCT = /[.,);\]'">]+\z/
 
 # Directory basenames pruned from the scan.
-EXCLUDE_DIRS = %w[.git node_modules vendor tmp .bundle].freeze
+EXCLUDE_DIRS = %w[.git node_modules vendor tmp .bundle .context].freeze
 
 def load_allowlist(path)
   doc = YAML.safe_load_file(path)
@@ -94,10 +94,21 @@ def url_allowed?(url, prefixes)
     # If the allowlist prefix itself ends at a path boundary, anything past
     # it is fine.
     next true if prefix.end_with?("/")
-    # Otherwise the URL must continue at a path / query / fragment boundary —
-    # not a host-extension character (`.`), userinfo separator (`@`), etc.
+    # Otherwise the URL must continue at a structural boundary: path (/),
+    # query (?), or fragment (#). A colon (:) is accepted only when followed
+    # immediately by a numeric port — this rejects userinfo attacks where the
+    # colon introduces credentials rather than a port number.
     boundary = url[prefix.length]
-    boundary == "/" || boundary == "?" || boundary == "#"
+    case boundary
+    when "/", "?", "#" then true
+    when ":"
+      # Only loopback addresses legitimately vary by port (OAuth callback server).
+      next false unless prefix.start_with?("http://localhost", "http://127.0.0.1")
+      rest = url[(prefix.length + 1)..]
+      rest&.match?(/\A\d{1,5}(\/|\?|#|\z)/)
+    else
+      false
+    end
   end
 end
 
@@ -133,7 +144,8 @@ def self_test
     allowed_repo = "github.com/Coolhand-Labs/foo"
     allowed_prefixes = [
       "https://#{allowed_host}",
-      "https://#{allowed_repo[0, 'github.com/Coolhand-Labs/'.length]}"
+      "https://#{allowed_repo[0, 'github.com/Coolhand-Labs/'.length]}",
+      "http://localhost"
     ]
 
     # Build the violation URL dynamically so this script's source contains
@@ -145,12 +157,21 @@ def self_test
     # raw start_with? but is actually a different domain.
     confusion_url = "https" + "://" + allowed_host + "." + bad_host + "/leak"
 
+    # Userinfo attack: colon-at-sign pattern (localhost:@<host>) where the colon
+    # introduces credentials rather than a port; must be rejected.
+    userinfo_url = "http" + "://localhost:@" + bad_host + "/path"
+
     File.write("#{dir}/good.md", "see https://#{allowed_host}/docs for details\n")
     File.write("#{dir}/repo.md", "code at https://#{allowed_repo}\n")
     File.write("#{dir}/bad.md", "evil link: #{bad_url}\n")
     File.write("#{dir}/confusion.md", "sneaky: #{confusion_url}\n")
     File.write("#{dir}/no_url.md", "this file has no urls\n")
     File.write("#{dir}/vendored.json", "{\"upstream\": \"#{bad_url}\"}\n")
+    nonloopback_port_url = "https" + "://" + allowed_host + ":4444/foo"
+
+    File.write("#{dir}/port.md", "callback: http://localhost:9999/callback\n")
+    File.write("#{dir}/userinfo.md", "attack: #{userinfo_url}\n")
+    File.write("#{dir}/nonloopback_port.md", "bad: #{nonloopback_port_url}\n")
 
     violations = scan(dir, allowed_prefixes, ["vendored.json"])
 
@@ -180,8 +201,20 @@ def self_test
         ok: violations.none? { |v| v[:file] == "vendored.json" }
       },
       {
-        name: "exactly two violations total (bad.md + confusion.md)",
-        ok: violations.length == 2
+        name: "port.md localhost:PORT URL is allowed (numeric port boundary)",
+        ok: violations.none? { |v| v[:file] == "port.md" }
+      },
+      {
+        name: "userinfo.md localhost:@ attack is rejected (userinfo, not port)",
+        ok: violations.any? { |v| v[:file] == "userinfo.md" }
+      },
+      {
+        name: "nonloopback_port.md trusted-host:PORT is rejected (port boundary limited to loopback)",
+        ok: violations.any? { |v| v[:file] == "nonloopback_port.md" }
+      },
+      {
+        name: "exactly four violations total (bad.md + confusion.md + userinfo.md + nonloopback_port.md)",
+        ok: violations.length == 4
       }
     ]
 

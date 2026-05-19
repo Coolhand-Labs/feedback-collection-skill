@@ -145,6 +145,14 @@ Drift detection runs only on user consent — 3b's Phase A asks before fetching 
 
 The script is Python because the spec extraction (brace-counting through Redoc's `__redoc_state` blob) is cleanest in Python's `re` + `json`, and Python is more universally installed than Ruby on developer machines.
 
+## CLI-first pattern in SKILL.md
+
+When writing skill instructions that involve an operation the `coolhand` CLI could perform, prefer a CLI invocation over inline implementation. This keeps SKILL.md token-efficient and puts the implementation spec where it can be versioned and maintained — the CLI's `--help` output.
+
+**Preferred form:** `run \`coolhand <subcommand>\`` followed by a note that `--help` is the authoritative spec for that subcommand.
+
+**If no CLI command exists for the needed operation:** ask the user whether to file a tracking issue on https://github.com/Coolhand-Labs/coolhand-cli before adding any inline implementation detail. Don't inline a protocol or script template as a workaround — that creates two specs to keep in sync. The ticket is the right place for the spec; the skill should just say "use `coolhand <subcommand>` once it ships."
+
 ## Versioning and CHANGELOG
 
 - `plugin.json`, `marketplace.json`, and `SKILL.md` `version` fields all track together. Bump them in the same commit.
