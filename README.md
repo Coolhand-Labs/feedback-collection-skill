@@ -48,7 +48,7 @@ To scope the scan to a specific directory:
 /coolhand src/ai/
 ```
 
-The skill will check for your `COOLHAND_API_KEY` before starting. If it's not set, you'll be prompted to add it to your `.env`.
+The skill scans your codebase and designs a feedback strategy first, then asks for an API key before setting anything up. For managed Coolhand it needs `COOLHAND_API_KEY` (the skill can open a browser flow to get one via `coolhand login`); for self-hosted it needs `FEEDBACK_API_KEY` and `FEEDBACK_API_KEYS`.
 
 ## What makes strong feedback
 

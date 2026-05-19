@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Browser-based token acquisition (issue #6):** when no API key is found, the skill now offers a browser auth flow before falling back to the manual copy-paste path. For managed Coolhand, the skill runs `coolhand login --write-env <path>` (`npx coolhand-cli login` for a zero-install one-shot); for self-hosted, users generate an opaque secret. The skill asks where to write the key rather than assuming `.env`, and the gate now accepts either `COOLHAND_API_KEY` (managed) or `FEEDBACK_API_KEY` (self-hosted).
+- **CLI-first convention in CLAUDE.md:** added a section codifying the pattern — prefer `coolhand <subcommand>` over inline implementation; if no CLI command exists for the needed operation, ask whether to file a tracking issue on coolhand-cli before adding inline detail.
+
 ## v0.1.0 — 2026-05-08
 
 - Relicensed from MIT to Apache-2.0.
