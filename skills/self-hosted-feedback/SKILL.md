@@ -47,6 +47,10 @@ These three guardrails bite hardest at implementation time. The full discussion 
 
 If you find yourself constructing a fourth rationalization, surface it to the user instead of acting on it.
 
+## CLI troubleshooting
+
+If any `coolhand` CLI call is not found or behaves unexpectedly, run `npm install -g coolhand-cli` (or `npx coolhand-cli <command>` for a zero-install one-shot) and retry. See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
+
 ## Phase A: Verify spec freshness
 
 The skill ships a snapshot of the Coolhand v2 OpenAPI spec at `references/coolhand-openapi-v2.json`. The snapshot is the source of truth for scaffolding — deterministic output, works offline, reviewable in PRs. But it can drift as upstream evolves. This phase gives the user the option to check.

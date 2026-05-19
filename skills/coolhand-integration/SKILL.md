@@ -32,6 +32,10 @@ These three guardrails bite hardest at implementation time. The full discussion 
 
 If you find yourself constructing a fourth rationalization, surface it to the user instead of acting on it.
 
+## CLI troubleshooting
+
+If any `coolhand` CLI call is not found or behaves unexpectedly, run `npm install -g coolhand-cli` (or `npx coolhand-cli <command>` for a zero-install one-shot) and retry. See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
+
 ## Phase A: Fetch current SDK READMEs
 
 Implementation details (auto-monitoring entry points, configuration syntax) drift between SDK versions. Before writing code, fetch the README from the SDK(s) the user's stack needs:
