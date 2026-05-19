@@ -27,9 +27,13 @@ These three guardrails are the ones pressure (a hurry, a "small" exception, "we 
 |---|---|
 | "The user ID is internal-only / numeric / non-PII, hashing is overkill." | Hash anyway. The rule is no PII in `creator_unique_id`, period. SHA-256(internal_id) costs nothing and removes the question entirely. Switching from unhashed to hashed later means rewriting historical data, and the cost of being wrong is a privacy incident. |
 | "User already approved adding the widget once, I'll skip the proposal for the next AI surface." | Every UI change gets its own diff and its own sign-off. "Approved one widget" is not "approved widgets in general." The Phase 4 proposal — show the diff, name the element, wait for confirmation — applies to each placement, not the first. |
-| "`COOLHAND_API_KEY` is missing but the user is in a hurry. I'll wire everything up and they can fill in the key later." | Stop and wait, every time. Phase 0 is a gate, not a suggestion. Implementing without a key produces silent send failures at runtime that the user has to debug; making them set the key first is faster end-to-end. |
+| "Key is missing but the user is in a hurry. I'll wire everything up and they can fill it in later." | Stop at Phase 5 dispatch and wait for the correct backend-specific key. Implementing without it produces silent send failures at runtime; the key gate before dispatch is non-negotiable. |
 
 If you find yourself constructing a fourth rationalization, that's the signal to stop and surface it to the user rather than act on it.
+
+## CLI troubleshooting
+
+If any `coolhand` CLI call is not found or behaves unexpectedly, run `npm install -g coolhand-cli` (or `npx coolhand-cli <command>` for a zero-install one-shot) and retry. See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
 
 ## Instructions
 
@@ -41,18 +45,7 @@ Work through these phases in order. Be transparent about findings at each step.
 
 **Parse arguments:** `$ARGUMENTS` may contain an optional directory path (e.g., `/coolhand src/ai/`). If provided, restrict all file scanning to that path. If empty, scan the entire project.
 
-**Check for API key.** Look for `COOLHAND_API_KEY` in: `.env`, `.env.local`, `.env.development`, `.env.production`, and any other `.env.*` files. If not found, tell the user:
-
-> No `COOLHAND_API_KEY` found. You'll need one to send feedback.
-> If you plan to use the managed Coolhand backend, get a key at https://coolhandlabs.com.
-> If you plan to self-host, generate any opaque secret string.
-> Add it to your `.env`:
-> ```
-> COOLHAND_API_KEY=your_key_here
-> ```
-> Let me know when it's set and I'll continue.
-
-Stop and wait for confirmation before proceeding.
+**Note API key presence.** Look for `COOLHAND_API_KEY` and `FEEDBACK_API_KEY` in `.env`, `.env.local`, `.env.development`, `.env.production`, and any other `.env.*` files. Note which are present — the correct key is verified at Phase 5 once the backend path is known. Proceed to Phase 1 regardless.
 
 ---
 
@@ -230,6 +223,23 @@ Once the user confirms the plan, ask:
 > **Self-hosted** — scaffold matching endpoints on your own backend; the SDKs will POST to your host instead of coolhandlabs.com. Requires a database in this project (I see [detected DB or 'none' from Phase 2]). You own the data; you also own analysis.
 >
 > Which would you like?"
+
+**Verify the backend key before dispatching.** The backend is now known — check for the right key and acquire it if missing before invoking any implementation skill.
+
+- **Managed**: look for `COOLHAND_API_KEY` in `.env*`. If missing:
+  > No `COOLHAND_API_KEY` found. I need this before I can set up managed Coolhand.
+  > - **Browser flow**: Which env file should I write `COOLHAND_API_KEY` to? (I see [list any existing `.env*` files] — I'll default to `.env` if none exist.) Once you confirm, I'll run `coolhand login --write-env <path>`. (`npx coolhand-cli login --write-env <path>` if `coolhand` is not installed.)
+  > - **Manual**: get a key at https://coolhandlabs.com and add `COOLHAND_API_KEY=your_key_here` to your env file. Let me know which file and when it's done.
+
+- **Self-hosted**: look for `FEEDBACK_API_KEY` in `.env*`. If missing:
+  > No `FEEDBACK_API_KEY` found. Generate one opaque secret string and add it in two places — the SDK sends it as the client key and the server must list it as accepted:
+  > ```
+  > FEEDBACK_API_KEY=your_secret_here
+  > FEEDBACK_API_KEYS=your_secret_here
+  > ```
+  > (`FEEDBACK_API_KEYS` is a comma-separated list — add more values later for additional clients.) Let me know when it's set.
+
+Stop and wait for the key before dispatching.
 
 Dispatch based on the answer:
 

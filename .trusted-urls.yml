@@ -32,6 +32,14 @@ infrastructure:
   # CDN, drop this entry.
   - https://cdn.jsdelivr.net/npm/coolhand@latest/
 
+  # Loopback addresses used as the OAuth redirect_uri in the Phase 0 browser
+  # auth flow (issue #6). The Coolhand auth endpoint validates redirect_uri
+  # server-side and rejects anything that isn't http://localhost or
+  # http://127.0.0.1, so these two prefixes represent the entire allowed
+  # callback surface.
+  - http://localhost
+  - http://127.0.0.1
+
   # RFC-reserved test fixtures used by bin/check-skill-urls --self-test.
   # example.com is IANA-operated; .invalid is RFC 2606 reserved.
   - https://example.com
