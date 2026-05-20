@@ -51,13 +51,14 @@ Work through these phases in order. Be transparent about findings at each step.
 
 ### Phase 1: Codebase Scan
 
-Read `detection-patterns/providers.yml` (in this skill's directory) for the canonical detection patterns. It contains five lists used in this phase:
+Read `detection-patterns/providers.yml` (in this skill's directory) for the canonical detection patterns. It contains six lists used in this phase:
 
 - `sdk_imports.{python,node,ruby}` — substring patterns indicating an LLM SDK import
 - `inference_calls` — method-call substrings indicating an inference call (any language)
 - `http_inference_hosts` — hostname substrings for direct-HTTP inference detection (`requests.post`, `httpx.post`, `Faraday.post`, `Net::HTTP.post`, `fetch(...)`, etc. — match the hostname inside the URL)
-- `existing_coolhand` — substrings indicating Coolhand is already partially integrated
+- `existing_coolhand` — substrings indicating Coolhand is already partially integrated (may be frontend-only or unconfigured)
 - `existing_feedback_ui` — substrings indicating an existing feedback UI
+- `server_sdk_interceptor.{ruby,python,node}` — patterns indicating the Coolhand server SDK interceptor is configured and active (see Phase 3 for how this affects matching strategy)
 
 These are substring matches, not regexes. Search the project (or scoped path) for each list, treating an entry as a hit when it appears anywhere in the matching language's source files.
 
@@ -93,7 +94,7 @@ Use the best available option, in priority order. **At least one of `client_uniq
 
 1. **`llm_request_log_id`** *(best)* — available if the Coolhand server SDK is installed and auto-monitoring calls. The SDK captures this ID on each response automatically. Adding the SDK gives you this for free going forward.
 
-   When `existing_coolhand` markers are detected in Phase 1, the SDK is already installed and the interceptor is already active — do not ask whether it auto-monitors. Access the captured ID immediately after the inference call returns:
+   When `server_sdk_interceptor` patterns (from `detection-patterns/providers.yml`) appear in an initializer or boot file — not in a comment, env file, or dependency manifest alone — the interceptor is active and capturing `llm_request_log_id`. Do not ask for confirmation; use the extraction patterns below. A bare `existing_coolhand` hit (`CoolhandJS`, `COOLHAND_API_KEY`, or the unqualified string `coolhand`) is **not** sufficient — those match frontend-only or unconfigured states. Access the captured ID immediately after the inference call returns:
    - Ruby: `Coolhand.last_log_id` (thread-safe; returns the log ID for the most recent intercepted call on this thread, or `nil`)
    - Python: `coolhand.context.last_log_id()`
    - Node.js: `response.coolhand_log_id` (added to the response wrapper by the monitor)
