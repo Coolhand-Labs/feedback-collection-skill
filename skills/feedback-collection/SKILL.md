@@ -91,12 +91,7 @@ Use the best available option, in priority order. **At least one of `client_uniq
 
 1. **`llm_request_log_id`** *(best)* — available if the Coolhand server SDK is installed and auto-monitoring calls. The SDK captures this ID on each response automatically. Adding the SDK gives you this for free going forward.
 
-2. **`llm_provider_unique_id`** *(second best)* — the unique ID the LLM provider assigns to each response. The Coolhand backend uses this for **Tier 0 (zero-ambiguity) matching** — a direct lookup that is faster and more reliable than content-based matching. Capture it from the raw response object before any transformation.
-   - OpenAI / Azure (all languages): `response.id` — e.g., `chatcmpl-abc123`
-   - Anthropic (all languages): `response.id` — e.g., `msg_abc123`
-   - Copilot / Microsoft: `response.messageId` — e.g., `49006e34-e57c-4300-9fd0-9f68ddb570f7`
-
-   See `detection-patterns/providers.yml` → `request_id_extraction` for per-language snippets.
+2. **`llm_provider_unique_id`** *(second best)* — the unique ID the LLM provider assigns to each response. The Coolhand backend uses this for **Tier 0 (zero-ambiguity) matching** — a direct lookup that is faster and more reliable than content-based matching. Capture it from the raw response object before any transformation. See `source_apis.yml` (in this skill's directory) for the field name and example value per provider; see `detection-patterns/providers.yml` → `request_id_extraction` for per-language extraction snippets.
 
 3. **`client_unique_id`** *(backstop, always send)* — a unique ID from your own system for this request, session, conversation, or task. Something you can look up if needed. Acceptable forms: a hashed primary key, a session UUID, a conversation/job ID — any string that uniquely identifies this LLM run end-to-end.
 

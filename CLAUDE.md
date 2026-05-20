@@ -22,8 +22,9 @@ This file captures conventions Claude should follow when editing this repo.
 ├── skills/
 │   ├── feedback-collection/     # Planner: scans, designs strategy, dispatches
 │   │   ├── SKILL.md
+│   │   ├── source_apis.yml      # Per-provider response ID field names and example values
 │   │   └── detection-patterns/
-│   │       └── providers.yml    # Provider/SDK detection patterns
+│   │       └── providers.yml    # Provider/SDK detection patterns + per-language extraction snippets
 │   ├── coolhand-integration/    # 3a: install SDKs against managed coolhandlabs.com
 │   │   └── SKILL.md
 │   └── self-hosted-feedback/    # 3b: scaffold endpoints on user's own backend
@@ -144,6 +145,22 @@ Fetches upstream and compares hashes without writing anything. Used by 3b's Phas
 Drift detection runs only on user consent — 3b's Phase A asks before fetching so users on firewalled networks (a real share of self-hosted users) can decline without breaking the flow.
 
 The script is Python because the spec extraction (brace-counting through Redoc's `__redoc_state` blob) is cleanest in Python's `re` + `json`, and Python is more universally installed than Ruby on developer machines.
+
+## No language-specific instructions inline in SKILL.md
+
+SKILL.md is a prompt — it is read at runtime by a language model. Inline language-specific details (per-SDK extraction snippets, per-language code samples, provider-keyed mappings) make it longer, harder to maintain, and drift-prone. When a task requires this kind of data, apply the following decision tree **before** writing anything inline:
+
+1. **Is it static lookup data?** (provider IDs, extraction patterns, SDK import strings, inference call signatures, host names)
+   → Put it in a lookup YAML and have the SKILL.md refer to that file by path and key. Two files cover most cases:
+   - `detection-patterns/providers.yml` — SDK import patterns, inference call signatures, HTTP hosts, per-language extraction snippets. Validated by `bin/validate-patterns`.
+   - `skills/feedback-collection/source_apis.yml` — per-provider response ID field names and example values. Add new providers here when the field name or example value is provider-specific.
+
+2. **Is it operational logic that a CLI command could encapsulate?** (multi-step procedures, stateful operations, anything that could accept flags and return structured output)
+   → Prefer `coolhand <subcommand>` per the CLI-first pattern. If no command exists yet, propose filing an issue at https://github.com/Coolhand-Labs/coolhand-cli rather than inlining the implementation.
+
+3. **Neither fits cleanly?** → Consult the user before writing anything inline. Describe the trade-offs (YAML maintenance cost vs. CLI issue lag vs. inline drift) and let them decide.
+
+**The test:** If adding the information requires listing the same thing once per language or once per provider, it belongs in YAML, not in SKILL.md.
 
 ## CLI-first pattern in SKILL.md
 

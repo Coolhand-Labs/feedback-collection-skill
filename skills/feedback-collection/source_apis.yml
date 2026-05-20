@@ -1,0 +1,22 @@
+version: "1"
+description: >
+  Per-provider source API metadata for Coolhand feedback collection.
+  Read by Phase 3 of feedback-collection/SKILL.md and Phase D of
+  coolhand-integration/SKILL.md when determining how to populate
+  llm_provider_unique_id.
+
+providers:
+  openai:
+    display_name: "OpenAI / Azure OpenAI"
+    response_id_field: "response.id"
+    response_id_example: "chatcmpl-abc123"
+
+  anthropic:
+    display_name: "Anthropic"
+    response_id_field: "response.id"
+    response_id_example: "msg_abc123"
+
+  copilot:
+    display_name: "Copilot / Microsoft"
+    response_id_field: "response.messageId"
+    response_id_example: "49006e34-e57c-4300-9fd0-9f68ddb570f7"
