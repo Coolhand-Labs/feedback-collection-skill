@@ -83,6 +83,28 @@ existing_feedback_ui:
   - "Was this helpful"
   - "Was this useful"
 
+# Patterns that indicate the Coolhand server SDK's auto-monitoring interceptor
+# is configured. A match here (in an initializer or boot file, not a comment
+# or env file) means llm_request_log_id is being captured on LLM calls.
+# Distinct from existing_coolhand, which may match frontend-only or
+# unconfigured states (e.g., CoolhandJS widget, COOLHAND_API_KEY in .env.example).
+server_sdk_interceptor:
+  ruby:
+    - "Coolhand.configure"
+  python:
+    - "coolhand.configure("
+    - "Coolhand(api_key="
+  node:
+    - "coolhand-node/auto-monitor"
+    - "initializeGlobalMonitoring("
+
+# Per-language snippets for reading the Coolhand log ID after an intercepted call.
+# Use only when server_sdk_interceptor patterns confirm the interceptor is active.
+server_sdk_log_id_extraction:
+  ruby: "Coolhand.last_log_id"
+  python: "coolhand.context.last_log_id()"
+  node: "response.coolhand_log_id"
+
 # How to extract the provider's response ID from the response object.
 # This populates `llm_provider_unique_id` for Tier 0 (zero-ambiguity) matching
 # on the Coolhand backend. Capture before any output transformation.

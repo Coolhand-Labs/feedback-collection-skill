@@ -51,13 +51,14 @@ Work through these phases in order. Be transparent about findings at each step.
 
 ### Phase 1: Codebase Scan
 
-Read `detection-patterns/providers.yml` (in this skill's directory) for the canonical detection patterns. It contains five lists used in this phase:
+Read `detection-patterns/providers.yml` (in this skill's directory) for the canonical detection patterns. It contains six lists used in this phase:
 
 - `sdk_imports.{python,node,ruby}` — substring patterns indicating an LLM SDK import
 - `inference_calls` — method-call substrings indicating an inference call (any language)
 - `http_inference_hosts` — hostname substrings for direct-HTTP inference detection (`requests.post`, `httpx.post`, `Faraday.post`, `Net::HTTP.post`, `fetch(...)`, etc. — match the hostname inside the URL)
-- `existing_coolhand` — substrings indicating Coolhand is already partially integrated
+- `existing_coolhand` — substrings indicating Coolhand is already partially integrated (may be frontend-only or unconfigured)
 - `existing_feedback_ui` — substrings indicating an existing feedback UI
+- `server_sdk_interceptor.{ruby,python,node}` — patterns indicating the Coolhand server SDK interceptor is configured and active (see Phase 3 for how this affects matching strategy)
 
 These are substring matches, not regexes. Search the project (or scoped path) for each list, treating an entry as a hit when it appears anywhere in the matching language's source files.
 
@@ -67,6 +68,8 @@ For each AI inference call found, note:
 3. How the output is used: shown to a user, drives an automated decision, triggers a downstream action
 4. Whether any existing downstream event naturally signals quality: a purchase, save, share, accept/reject action, copy to clipboard, delete/dismiss, retry
 5. Whether a user identity is accessible in that code path
+
+If a file appears to make inference calls but its role is ambiguous — e.g., it looks like a relay, adapter, or proxy forwarding requests on behalf of external callers — read the full file before drawing a conclusion. Check whether this application *consumes* the inference output itself or merely forwards it. Resolve every such ambiguity yourself before presenting findings; do not ask the user to confirm scope until every candidate file has been examined.
 
 ---
 
@@ -90,6 +93,8 @@ For each AI workflow found, design a strategy covering matching, signal quality,
 Use the best available option, in priority order. **At least one of `client_unique_id` or `original_output` must accompany every feedback submission as a backstop.** The top two are upgrades when available.
 
 1. **`llm_request_log_id`** *(best)* — available if the Coolhand server SDK is installed and auto-monitoring calls. The SDK captures this ID on each response automatically. Adding the SDK gives you this for free going forward.
+
+   When `server_sdk_interceptor` patterns (from `detection-patterns/providers.yml`) appear in an initializer or boot file — not in a comment, env file, or dependency manifest alone — the interceptor is active and capturing `llm_request_log_id`. Do not ask for confirmation; see `detection-patterns/providers.yml` → `server_sdk_log_id_extraction` for per-language access patterns. A bare `existing_coolhand` hit (`CoolhandJS`, `COOLHAND_API_KEY`, or the unqualified string `coolhand`) is **not** sufficient — those match frontend-only or unconfigured states.
 
 2. **`llm_provider_unique_id`** *(second best)* — the unique ID the LLM provider assigns to each response. The Coolhand backend uses this for **Tier 0 (zero-ambiguity) matching** — a direct lookup that is faster and more reliable than content-based matching. Capture it from the raw response object before any transformation. See `source_apis.yml` (in this skill's directory) for the field name and example value per provider; see `detection-patterns/providers.yml` → `request_id_extraction` for per-language extraction snippets.
 
