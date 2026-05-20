@@ -91,15 +91,11 @@ Use the best available option, in priority order. **At least one of `client_uniq
 
 1. **`llm_request_log_id`** *(best)* — available if the Coolhand server SDK is installed and auto-monitoring calls. The SDK captures this ID on each response automatically. Adding the SDK gives you this for free going forward.
 
-2. **`llm_provider_unique_id`** *(second best)* — the `x-request-id` header returned by the LLM provider. Capture it from the response and store it alongside the output so it can be included when feedback is submitted later.
-   - OpenAI (Python): `response.response_headers.get('x-request-id')`
-   - OpenAI (Node): `response.headers.get('x-request-id')`
-   - Anthropic: `response.headers.get('x-request-id')` (or `response.request_id` via SDK)
-   - Ruby: `response.headers['x-request-id']`
+2. **`llm_provider_unique_id`** *(second best)* — the unique ID the LLM provider assigns to each response. The Coolhand backend uses this for **Tier 0 (zero-ambiguity) matching** — a direct lookup that is faster and more reliable than content-based matching. Capture it from the raw response object before any transformation. See `source_apis.yml` (in this skill's directory) for the field name and example value per provider; see `detection-patterns/providers.yml` → `request_id_extraction` for per-language extraction snippets.
 
 3. **`client_unique_id`** *(backstop, always send)* — a unique ID from your own system for this request, session, conversation, or task. Something you can look up if needed. Acceptable forms: a hashed primary key, a session UUID, a conversation/job ID — any string that uniquely identifies this LLM run end-to-end.
 
-4. **`original_output`** *(backstop, always send when available)* — the verbatim text the LLM produced, used for fuzzy matching when the upstream IDs aren't available. Should match (in whole or part) what the user is reacting to.
+4. **`original_output`** *(backstop, always send when available)* — the **raw, unmodified** text or JSON the model returned, captured directly from the response object before any transformation or post-processing. The backend matches against what it stored; passing a summarised or restructured version instead of the raw response will silently break matching.
 
 **The floor rule:** do not submit feedback with neither (3) nor (4). If the call site has access to neither, fix the call site to capture one before adding feedback.
 

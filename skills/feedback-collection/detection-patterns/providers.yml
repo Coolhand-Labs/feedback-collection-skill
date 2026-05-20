@@ -83,14 +83,19 @@ existing_feedback_ui:
   - "Was this helpful"
   - "Was this useful"
 
-# How to extract `x-request-id` from a provider's response object.
-# Used to populate `llm_provider_unique_id` when Coolhand server SDK is not installed.
+# How to extract the provider's response ID from the response object.
+# This populates `llm_provider_unique_id` for Tier 0 (zero-ambiguity) matching
+# on the Coolhand backend. Capture before any output transformation.
 request_id_extraction:
   openai:
-    python: "response.response_headers.get('x-request-id')"
-    node: "response.headers.get('x-request-id')"
-    ruby: "response.headers['x-request-id']"
+    python: "response.id"
+    node: "response.id"
+    ruby: "response.id"
   anthropic:
-    python: "response.headers.get('x-request-id') (or response.request_id via SDK)"
-    node: "response.headers.get('x-request-id')"
-    ruby: "response.headers['x-request-id']"
+    python: "response.id"
+    node: "response.id"
+    ruby: "response.id"
+  copilot:
+    python: "response.get('messageId')"
+    node: "response.messageId"
+    ruby: "response['messageId']"
