@@ -220,7 +220,7 @@ coolhand-js (only if active UI was approved):
 Same rules as the planner's Phase 3:
 
 - Hashed `creator_unique_id`.
-- Best available match field, with `client_unique_id` and/or `original_output` always present as the floor.
+- Best available match field, with `client_unique_id` and/or `original_output` always present as the floor. For `llm_provider_unique_id`: see `../feedback-collection/source_apis.yml` for the response ID field per provider, captured before any output transformation. For `original_output`: pass the raw response content, not a summarised or restructured version.
 - `sentiment` (string enum), not `like` (boolean).
 - `collector: "<your-app-slug>-manual"` to distinguish data sources in your own analytics.
 
@@ -240,7 +240,7 @@ If any of these fail, debug before reporting completion.
 
 - [ ] All three endpoints respond with the expected status codes and JSON shapes.
 - [ ] Auth middleware accepts all three mechanisms (`X-API-Key`, `Authorization: Bearer`, `?api_key=`).
-- [ ] At least one of `client_unique_id` or `original_output` is included on every feedback submission.
+- [ ] At least one of `client_unique_id` or `original_output` is included on every feedback submission; if `original_output`, it is the raw model response (pre-transformation).
 - [ ] No PII in `creator_unique_id`.
 - [ ] `sentiment` is the field used for binary signals; `like` is only populated when `sentiment` is unavailable.
 - [ ] The user understands that historical data captured here lives only in their DB — Coolhand never sees it.
