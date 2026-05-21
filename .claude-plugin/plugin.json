@@ -1,7 +1,7 @@
 {
   "name": "feedback-collection",
-  "version": "0.1.0",
-  "description": "Find AI/LLM workflows and implement Coolhand human feedback collection",
+  "version": "0.2.0",
+  "description": "Find AI/LLM workflows and implement Coolhand human feedback collection. Also ships /wildcard-tool to inject an agent-side complaint box into any project.",
   "author": {
     "name": "Coolhand Labs",
     "url": "https://coolhandlabs.com"

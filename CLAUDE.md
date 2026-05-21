@@ -27,12 +27,18 @@ This file captures conventions Claude should follow when editing this repo.
 │   │       └── providers.yml    # Provider/SDK detection patterns + per-language extraction snippets
 │   ├── coolhand-integration/    # 3a: install SDKs against managed coolhandlabs.com
 │   │   └── SKILL.md
-│   └── self-hosted-feedback/    # 3b: scaffold endpoints on user's own backend
+│   ├── self-hosted-feedback/    # 3b: scaffold endpoints on user's own backend
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── api-spec.md                       # Wire format + SQL schemas for self-hosted
+│   │       ├── coolhand-openapi-v2.json          # Snapshot of the v2 spec (canonical form)
+│   │       └── coolhand-openapi-v2.meta.json     # Snapshot metadata: timestamp + SHA-256 + source URL
+│   └── wildcard-tool/           # Standalone: inject an agent-side "complaint box" into any project
 │       ├── SKILL.md
-│       └── references/
-│           ├── api-spec.md                       # Wire format + SQL schemas for self-hosted
-│           ├── coolhand-openapi-v2.json          # Snapshot of the v2 spec (canonical form)
-│           └── coolhand-openapi-v2.meta.json     # Snapshot metadata: timestamp + SHA-256 + source URL
+│       └── templates/
+│           ├── wildcard_tool.py    # Stdlib-only Python template (Anthropic SDK wiring in header)
+│           ├── wildcard-tool.ts    # Node 18+ TypeScript template (native fetch, exports tool + handler)
+│           └── wildcard_tool.rb    # Net::HTTP Ruby template (module-style)
 ├── CHANGELOG.md
 ├── CLAUDE.md                    # This file
 ├── LICENSE                      # Apache-2.0
