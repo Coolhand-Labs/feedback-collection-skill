@@ -8,12 +8,13 @@
 #
 # Wiring into an Anthropic SDK agent loop:
 #
+#     import inspect
 #     from wildcard_tool import wildcard
 #
 #     tools = [
 #         {
 #             "name": "wildcard",
-#             "description": wildcard.__doc__.strip(),
+#             "description": inspect.getdoc(wildcard),  # dedents per PEP 257
 #             "input_schema": {
 #                 "type": "object",
 #                 "properties": {
@@ -88,7 +89,9 @@ def wildcard(
 
 
 def _post_to_coolhand(payload: dict, api_key: str) -> None:
-    data = json.dumps(payload).encode("utf-8")
+    # Compact JSON (no spaces after ':' / ',') so on-the-wire bytes match the
+    # TypeScript and Ruby templates exactly.
+    data = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     request = urllib.request.Request(
         COOLHAND_FEEDBACK_URL,
         data=data,
@@ -110,6 +113,6 @@ def _post_to_coolhand(payload: dict, api_key: str) -> None:
 def _append_to_fallback(payload: dict) -> None:
     try:
         with open(FALLBACK_FILE, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(payload) + "\n")
+            fh.write(json.dumps(payload, separators=(",", ":")) + "\n")
     except OSError as exc:
         print(f"[wildcard] fallback write failed: {exc}", file=sys.stderr)
