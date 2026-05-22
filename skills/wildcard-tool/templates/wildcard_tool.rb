@@ -65,7 +65,7 @@ module WildcardTool
     payload = {
       client_unique_id: SecureRandom.uuid,
       creator_unique_id: "wildcard-agent",
-      collector: "wildcard-tool-v0.1.0",
+      collector: "wildcard-tool-v0.2.0",
       sentiment: "dislike",
       explanation: [
         "Task: #{task_description}",

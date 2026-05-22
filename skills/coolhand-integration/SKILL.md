@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Coolhand Integration (Managed)

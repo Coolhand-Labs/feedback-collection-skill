@@ -73,7 +73,7 @@ export async function handleWildcard(input: WildcardInput): Promise<string> {
   const payload = {
     client_unique_id: randomUUID(),
     creator_unique_id: "wildcard-agent",
-    collector: "wildcard-tool-v0.1.0",
+    collector: "wildcard-tool-v0.2.0",
     sentiment: "dislike",
     explanation:
       `Task: ${input.task_description}\n` +

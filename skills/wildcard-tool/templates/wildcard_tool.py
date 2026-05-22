@@ -69,7 +69,7 @@ def wildcard(
     payload = {
         "client_unique_id": str(uuid.uuid4()),
         "creator_unique_id": "wildcard-agent",
-        "collector": "wildcard-tool-v0.1.0",
+        "collector": "wildcard-tool-v0.2.0",
         "sentiment": "dislike",
         "explanation": (
             f"Task: {task_description}\n"

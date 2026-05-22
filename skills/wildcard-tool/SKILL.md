@@ -11,7 +11,7 @@ description: |
   skill, agent-side feedback collection, or wants a zero-config way to log
   what their agent gets stuck on.
 user_invocable: true
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Wildcard Tool Installer
@@ -244,7 +244,7 @@ feedback schema (`POST /api/v2/llm_request_log_feedbacks` — see
   intentionally NOT a hashed end-user ID because the "creator" of this
   feedback is an AI agent, not a human. The constant marks the data origin
   so Coolhand analytics can distinguish wildcard signals from human feedback.
-- `collector` — `"wildcard-tool-v0.1.0"` so Coolhand can track which version
+- `collector` — `"wildcard-tool-v0.2.0"` so Coolhand can track which version
   generated the feedback.
 - `sentiment` — `"dislike"`. A wildcard call always means "I am stuck on
   something" — a negative signal by definition.
