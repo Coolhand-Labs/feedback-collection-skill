@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Coolhand Integration (Managed)
@@ -133,7 +133,69 @@ Notes:
 - `CoolhandJS.init` takes the **public** API key (safe to embed in frontend code), not the server-side private key.
 - The widget sets its own `coolhand_fingerprint_id` for cross-session correlation. Do not pass `coolhandFingerprintId` from server code; the widget owns that field.
 
-## Phase F: Post-implementation checklist
+## Phase F: Private key and optimization tools (optional)
+
+Only proceed with this phase if the user wants to call Coolhand's optimization tools — searching, reviewing, commenting on, or acting on optimizations. Skip if the workflow only needs log ingest and feedback submission.
+
+### F.1 — Obtain the private key
+
+The optimization commands require a private key (`ch_priv_*`), stored separately from the public key (`ch_pub_*`) used by the server SDK.
+
+If `COOLHAND_PRIVATE_KEY` is not already in `.env`:
+
+```bash
+coolhand login --scope private --write-env .env
+# npx coolhand-cli login --scope private --write-env .env
+```
+
+The browser opens to the Coolhand authorization page with a **red "Private API Key Request" banner**. The user must check two confirmation boxes. The CLI writes both keys to `.env`:
+
+```
+COOLHAND_API_KEY=ch_pub_...       # server SDK and log ingest (unchanged)
+COOLHAND_PRIVATE_KEY=ch_priv_...  # optimization commands only
+```
+
+Security rule: `COOLHAND_PRIVATE_KEY` must never appear in frontend code or be committed to source control. The `coolhand-js` widget and the server SDK use only `COOLHAND_API_KEY`.
+
+### F.2 — Run optimization commands via the CLI
+
+All optimization operations are available as `coolhand` subcommands. Run `coolhand help <command>` for the full flag reference.
+
+| CLI command | What it does |
+|---|---|
+| `coolhand search-optimizations` | List and filter optimizations (status, type, category, text, date range) |
+| `coolhand get-optimization <id>` | Full detail including analysis, plan, comments, and orchestrator history |
+| `coolhand add-optimization-comment <id> <comment>` | Append a human-feedback comment (≥ 20 chars) |
+| `coolhand close-optimization <id> <reason>` | Dismiss a draft/proposed optimization with ≥ 50-char explanation |
+| `coolhand create-optimization` | Create a new draft optimization |
+| `coolhand update-optimization <id>` | Enrich a draft with title, analysis, and implementation plan |
+
+Each command reads `COOLHAND_PRIVATE_KEY` from the environment or from `~/.coolhand/config.json`. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
+
+### F.3 — Raw MCP fallback (older CLI versions only)
+
+If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands. Upgrade with `npm install -g coolhand-cli`, or fall back to direct MCP calls until upgraded.
+
+Endpoint: `POST /mcp` at your Coolhand base URL (default: `coolhandlabs.com`) — pass the private key as `X-API-Key`. Never include `client_id` in tool arguments; the private key scopes calls to the associated client automatically.
+
+JSON-RPC 2.0 request shape:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "add_optimization_comment",
+    "arguments": {
+      "optimization_id": "abc123",
+      "comment": "This optimization looks actionable — let us prioritize it."
+    }
+  }
+}
+```
+
+## Phase G: Post-implementation checklist
 
 After implementing, remind the user:
 
