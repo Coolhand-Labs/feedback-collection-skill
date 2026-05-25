@@ -148,7 +148,7 @@ coolhand login --scope private --write-env <path>
 # npx coolhand-cli login --scope private --write-env <path>
 ```
 
-The browser opens to the Coolhand authorization page with a **red "Private API Key Request" banner**. The user must check two confirmation boxes. The CLI writes both keys to the same env file:
+The browser opens to the Coolhand authorization page with a **red "Private API Key Request" banner**. The user must check two confirmation boxes. After running, the env file contains both keys:
 
 ```
 COOLHAND_API_KEY=ch_pub_...       # server SDK and log ingest (unchanged)
