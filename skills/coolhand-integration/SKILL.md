@@ -145,7 +145,7 @@ If `COOLHAND_PRIVATE_KEY` is not already set in the user's env file, ask which f
 
 ```bash
 coolhand login --scope private --write-env <path>
-# npx coolhand-cli login --scope private --write-env <path>
+# npx coolhand-cli@latest login --scope private --write-env <path>
 ```
 
 The browser opens to the Coolhand authorization page with a **red "Private API Key Request" banner**. The user must check two confirmation boxes. After running, the env file contains both keys:
@@ -165,8 +165,8 @@ All optimization operations are available as `coolhand` subcommands. Run `coolha
 |---|---|
 | `coolhand search-optimizations` | List and filter optimizations (status, type, category, text, date range) |
 | `coolhand get-optimization <id>` | Full detail including analysis, plan, comments, and orchestrator history |
-| `coolhand add-optimization-comment <id> <comment>` | Append a human-feedback comment (≥ 20 chars) |
-| `coolhand close-optimization <id> <reason>` | Dismiss a draft/proposed optimization with ≥ 50-char explanation |
+| `coolhand add-optimization-comment <id> <comment>` | Append a human-feedback comment |
+| `coolhand close-optimization <id> <reason>` | Dismiss a draft/proposed optimization |
 | `coolhand create-optimization` | Create a new draft optimization |
 | `coolhand update-optimization <id>` | Enrich a draft with title, analysis, and implementation plan |
 
