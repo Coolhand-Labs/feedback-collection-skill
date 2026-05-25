@@ -141,7 +141,7 @@ Only proceed with this phase if the user wants to call Coolhand's optimization t
 
 The optimization commands require a private key (`ch_priv_*`), stored separately from the public key (`ch_pub_*`) used by the server SDK.
 
-If `COOLHAND_PRIVATE_KEY` is not already set in the user's env file, ask which file to write it to — use the same path where `COOLHAND_API_KEY` was written in Phase 0, or ask the user if that path isn't known. Then run:
+If `COOLHAND_PRIVATE_KEY` is not already set in the user's env file, use the same file where `COOLHAND_API_KEY` is currently set, or ask the user if that path isn't known. Then run:
 
 ```bash
 coolhand login --scope private --write-env <path>
