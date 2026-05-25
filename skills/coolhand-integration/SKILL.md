@@ -172,28 +172,16 @@ All optimization operations are available as `coolhand` subcommands. Run `coolha
 
 Each command reads `COOLHAND_PRIVATE_KEY` from the environment or from `~/.coolhand/config.json`. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
 
-### F.3 — Raw MCP fallback (older CLI versions only)
+### F.3 — CLI upgrade (if subcommands are missing)
 
-If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands. Upgrade with `npm install -g coolhand-cli`, or fall back to direct MCP calls until upgraded.
+If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands. Upgrade and retry:
 
-Endpoint: `POST /mcp` at your Coolhand base URL (default: `coolhandlabs.com`) — pass the private key as `X-API-Key`. Never include `client_id` in tool arguments; the private key scopes calls to the associated client automatically.
-
-JSON-RPC 2.0 request shape:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "tools/call",
-  "params": {
-    "name": "add_optimization_comment",
-    "arguments": {
-      "optimization_id": "abc123",
-      "comment": "This optimization looks actionable — let us prioritize it."
-    }
-  }
-}
+```bash
+npm install -g coolhand-cli
+# or: npx coolhand-cli@latest <command>
 ```
+
+See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
 
 ## Phase G: Post-implementation checklist
 
@@ -205,3 +193,4 @@ After implementing, remind the user:
 - [ ] If the coolhand-js widget was added: verify visually in a browser that placement does not overlap other UI elements.
 - [ ] Sentiment uses the string enum (`"like"`/`"dislike"`/`"neutral"`), not the deprecated boolean.
 - [ ] The Coolhand server SDK auto-monitor is active so future LLM calls automatically populate `llm_request_log_id`.
+- [ ] If `COOLHAND_PRIVATE_KEY` was configured: confirm it is absent from every frontend bundle and not committed to source control.
