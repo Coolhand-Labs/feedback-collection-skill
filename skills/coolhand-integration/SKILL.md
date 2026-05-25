@@ -170,7 +170,7 @@ All optimization operations are available as `coolhand` subcommands. Run `coolha
 | `coolhand create-optimization` | Create a new draft optimization |
 | `coolhand update-optimization <id>` | Enrich a draft with title, analysis, and implementation plan |
 
-Each command reads `COOLHAND_PRIVATE_KEY` from the environment or from `~/.coolhand/config.json`. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
+Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
 
 ### F.3 — CLI upgrade (if subcommands are missing)
 
