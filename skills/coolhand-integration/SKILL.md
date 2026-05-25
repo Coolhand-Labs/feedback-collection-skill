@@ -174,10 +174,10 @@ Each command reads `COOLHAND_PRIVATE_KEY` from the environment or from `~/.coolh
 
 ### F.3 — CLI upgrade (if subcommands are missing)
 
-If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands. Upgrade and retry:
+If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.2.0+). Upgrade and retry:
 
 ```bash
-npm install -g coolhand-cli
+npm install -g coolhand-cli@latest
 # or: npx coolhand-cli@latest <command>
 ```
 
