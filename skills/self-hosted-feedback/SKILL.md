@@ -7,7 +7,7 @@ description: |
   the user picks "self-hosted" / "self-host" / "own backend." Also use when
   the user says "I want to host this myself," "no third-party," "data
   residency," or asks how to point Coolhand SDKs at a custom endpoint.
-version: 0.2.0
+version: 0.1.0
 ---
 
 # Self-Hosted Feedback (Coolhand-Compatible)
