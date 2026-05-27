@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Coolhand Integration (Managed)
@@ -163,7 +163,7 @@ All optimization operations are available as `coolhand` subcommands. Run `coolha
 
 | CLI command | What it does |
 |---|---|
-| `coolhand search-optimizations` | List and filter optimizations (status, type, category, text, date range) |
+| `coolhand search-optimizations` | List and filter optimizations |
 | `coolhand get-optimization <id>` | Full detail including analysis, plan, comments, and orchestrator history |
 | `coolhand add-optimization-comment <id> <comment>` | Append a human-feedback comment |
 | `coolhand close-optimization <id> <reason>` | Dismiss a draft/proposed optimization |
@@ -174,7 +174,7 @@ Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is mi
 
 ### F.3 — CLI upgrade (if subcommands are missing)
 
-If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.2.0+). Upgrade and retry:
+If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.3.0+). Upgrade and retry:
 
 ```bash
 npm install -g coolhand-cli@latest
