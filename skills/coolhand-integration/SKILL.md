@@ -141,14 +141,18 @@ Only proceed with this phase if the user wants to call Coolhand's optimization t
 
 The optimization commands require a private key (`ch_priv_*`), stored separately from the public key (`ch_pub_*`) used by the server SDK.
 
-If `COOLHAND_PRIVATE_KEY` is not already set in the user's env file, use the same file where `COOLHAND_API_KEY` is currently set, or ask the user if that path isn't known. Then run:
+If `COOLHAND_PRIVATE_KEY` is not already set in the user's env file, use the same file where `COOLHAND_API_KEY` is currently set, or ask the user if that path isn't known.
+
+Tell the user: "I'm going to run `coolhand login --scope private` now — a browser will open to a **red 'Private API Key Request' page** where you'll need to check two confirmation boxes to authorize the private key. I'll wait for you to complete it."
+
+Then run the command yourself:
 
 ```bash
 coolhand login --scope private --write-env <path>
 # npx coolhand-cli@latest login --scope private --write-env <path>
 ```
 
-The browser opens to the Coolhand authorization page with a **red "Private API Key Request" banner**. The user must check two confirmation boxes. After running, the env file contains both keys:
+After the user completes authorization, the env file contains both keys:
 
 ```
 COOLHAND_API_KEY=ch_pub_...       # server SDK and log ingest (unchanged)
