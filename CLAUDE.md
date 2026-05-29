@@ -172,7 +172,8 @@ When writing skill instructions that involve an operation the `coolhand` CLI cou
 
 ## Versioning and CHANGELOG
 
-- `plugin.json`, `marketplace.json`, and `SKILL.md` `version` fields all track together. Bump them in the same commit.
+- `plugin.json` and `marketplace.json` always track together — bump both in the same commit whenever the plugin is released.
+- Each `SKILL.md` `version` field bumps only when that skill's content changes. Skills whose content is unchanged do not get a version bump even when the plugin version advances.
 - Every change touching SKILL.md, the YAML schema, the validator, or the plugin manifests gets a CHANGELOG entry under `## Unreleased`. Cut a version section from `Unreleased` when publishing.
 - CHANGELOG entries lead with the change, then a brief why. Mirror the style in `CHANGELOG.md`'s existing entries.
 
