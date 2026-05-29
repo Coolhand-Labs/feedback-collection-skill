@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **coolhand-cli v0.3.1 compatibility:** update F.3 version gate and all version fields to v0.3.1+.
+
 - **coolhand-cli v0.3.0 compatibility:** drop the filter-type parenthetical from the `search-optimizations` one-liner in F.2 — it was already incomplete after CLI additions (pagination, sort, workload/template filters) and will keep drifting; `coolhand help search-optimizations` is the authoritative flag reference. Update F.3 version gate from v0.2.0+ to v0.3.0+: v0.2.0's `get-optimization` had a broken MCP parameter (`id` instead of `optimization_id`) making all calls fail; v0.3.0 is the first fully correct release.
 
 - **Private key and MCP optimization tools (issue #10):** `coolhand-integration` gains a new Phase F covering private key acquisition via `coolhand login --scope private --write-env .env` (CLI writes both `COOLHAND_API_KEY` and `COOLHAND_PRIVATE_KEY`), six new CLI subcommands for optimization operations (`search-optimizations`, `get-optimization`, `add-optimization-comment`, `close-optimization`, `create-optimization`, `update-optimization`), and a CLI-upgrade fallback (F.3) for users on older CLI versions. Former Phase F (post-implementation checklist) becomes Phase G. Requires coolhand-cli PR #4 (issue #3). Bumped `plugin.json`, `marketplace.json`, and `coolhand-integration/SKILL.md` to 0.3.0.

@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.3.0
+version: 0.3.1
 ---
 
 # Coolhand Integration (Managed)
@@ -178,7 +178,7 @@ Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is mi
 
 ### F.3 — CLI upgrade (if subcommands are missing)
 
-If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.3.0+). Upgrade and retry:
+If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.3.1+). Upgrade and retry:
 
 ```bash
 npm install -g coolhand-cli@latest
