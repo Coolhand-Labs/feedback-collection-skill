@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.2.0
+version: 0.3.1
 ---
 
 # Coolhand Integration (Managed)
@@ -133,7 +133,61 @@ Notes:
 - `CoolhandJS.init` takes the **public** API key (safe to embed in frontend code), not the server-side private key.
 - The widget sets its own `coolhand_fingerprint_id` for cross-session correlation. Do not pass `coolhandFingerprintId` from server code; the widget owns that field.
 
-## Phase F: Post-implementation checklist
+## Phase F: Private key and optimization tools (optional)
+
+Only proceed with this phase if the user wants to call Coolhand's optimization tools — searching, reviewing, commenting on, or acting on optimizations. Skip if the workflow only needs log ingest and feedback submission.
+
+### F.1 — Obtain the private key
+
+The optimization commands require a private key (`ch_priv_*`), stored separately from the public key (`ch_pub_*`) used by the server SDK.
+
+If `COOLHAND_PRIVATE_KEY` is not already set in the user's env file, use the same file where `COOLHAND_API_KEY` is currently set, or ask the user if that path isn't known.
+
+Tell the user: "I'm running `coolhand login --scope private` now — it will open a browser to a **red 'Private API Key Request' page** where you'll need to check two confirmation boxes. Once you authorize, the command completes automatically and I'll continue."
+
+Run the command. The CLI opens the browser and waits up to 5 minutes for the callback — you do not need to do anything else. Do not tell the user to run it themselves; you are running it:
+
+```bash
+coolhand login --scope private --write-env <path>
+# npx coolhand-cli@latest login --scope private --write-env <path>
+```
+
+After the user authorizes in the browser the command returns and the env file contains both keys:
+
+```
+COOLHAND_API_KEY=ch_pub_...       # server SDK and log ingest (unchanged)
+COOLHAND_PRIVATE_KEY=ch_priv_...  # optimization commands only
+```
+
+Security rule: `COOLHAND_PRIVATE_KEY` must never appear in frontend code or be committed to source control. The `coolhand-js` widget and the server SDK use only `COOLHAND_API_KEY`.
+
+### F.2 — Run optimization commands via the CLI
+
+All optimization operations are available as `coolhand` subcommands. Run `coolhand help <command>` for the full flag reference.
+
+| CLI command | What it does |
+|---|---|
+| `coolhand search-optimizations` | List and filter optimizations |
+| `coolhand get-optimization <id>` | Full detail including analysis, plan, comments, and orchestrator history |
+| `coolhand add-optimization-comment <id> <comment>` | Append a human-feedback comment |
+| `coolhand close-optimization <id> <reason>` | Dismiss a draft/proposed optimization |
+| `coolhand create-optimization` | Create a new draft optimization |
+| `coolhand update-optimization <id>` | Enrich a draft with title, analysis, and implementation plan |
+
+Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
+
+### F.3 — CLI upgrade (if subcommands are missing)
+
+If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.3.1+). Upgrade and retry:
+
+```bash
+npm install -g coolhand-cli@latest
+# or: npx coolhand-cli@latest <command>
+```
+
+See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
+
+## Phase G: Post-implementation checklist
 
 After implementing, remind the user:
 
@@ -143,3 +197,4 @@ After implementing, remind the user:
 - [ ] If the coolhand-js widget was added: verify visually in a browser that placement does not overlap other UI elements.
 - [ ] Sentiment uses the string enum (`"like"`/`"dislike"`/`"neutral"`), not the deprecated boolean.
 - [ ] The Coolhand server SDK auto-monitor is active so future LLM calls automatically populate `llm_request_log_id`.
+- [ ] If `COOLHAND_PRIVATE_KEY` was configured: confirm it is absent from every frontend bundle and not committed to source control.

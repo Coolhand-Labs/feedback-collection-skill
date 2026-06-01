@@ -1,257 +1,244 @@
 ---
 name: wildcard-tool
 description: |
-  Use when the user wants to add a "wildcard tool", "complaint box", "CEO
-  review tool", "magical wish tool", or any agent-feedback fallback to an AI
-  agent project so the agent can report when a tool call has failed,
-  returned wrong or incomplete data, or a needed capability does not exist.
-  Use when the user types /wildcard-tool or /complaint-box, asks how to make
-  invisible AI agent failures visible, or wants to capture which tools their
-  agent wishes it had. Also use when the user mentions Coolhand's wildcard
-  skill, agent-side feedback collection, or wants a zero-config way to log
-  what their agent gets stuck on.
+  Your agents fail silently when they need tools or capabilities you didn't
+  give them, and you have no record of what they wanted. This skill helps
+  you make those invisible failures visible so you can close the gaps. Use
+  when the user types /wildcard-tool, asks how to make invisible agent
+  failures visible, wants to capture what tools their agent wishes it had,
+  or mentions Coolhand's wildcard skill, agent-side feedback collection,
+  or zero-config ways to log what their agent gets stuck on.
 user_invocable: true
-version: 0.2.0
+version: 0.3.0
 ---
 
-# Wildcard Tool Installer
+# Wildcard Tool Consultant
 
-This skill adds a single "wildcard" tool to any AI agent project. The agent
-calls the tool when it is stuck — failed tool call, wrong data, missing
-capability — and the tool logs what was needed. Two delivery modes:
+This skill is a consultant, not an installer. It advises the developer's AI
+assistant on how to give an agent a "wildcard" tool: one the agent can call
+when it is stuck because a tool call failed, returned wrong or incomplete
+data, or a needed capability does not exist. The tool logs what the agent
+wanted, then returns a string telling the agent that the capability is
+unavailable so it continues without looping or asking the user.
 
-- If `COOLHAND_API_KEY` is set in the developer's environment, the tool POSTs
-  to Coolhand (managed analytics).
-- If not, the tool appends one JSON line per call to `.wildcard-feedback.jsonl`
-  in the project root — zero-config, no account needed.
+The developer's AI implements the tool in whatever language and shape fits
+their codebase. This skill never writes to the developer's project. Its job
+is to investigate, recommend, and explain. Implementation is downstream.
 
-The tool always returns the same response string to the agent so the agent
-continues with the tools it has rather than getting stuck or looping.
+## KISS
 
-This skill is the **installer**. It detects the developer's stack, shows them
-what will be added, copies the right template into their project, and updates
-their `CLAUDE.md` so their agent knows the tool exists.
+Default to the simplest, most maintainable solution that fits the project's
+existing setup.
+
+- If the project does not already use MCP, do not introduce it.
+- If the project does not already expose tools through a CLI, do not propose
+  a CLI surface.
+- If the project ships a single agent loop in one file, the wildcard tool
+  belongs in that file.
+
+The right answer is almost always whatever the project already does, with
+one more function added. Suggesting infrastructure the project does not
+have is rarely worth the cost.
 
 ## Rationalizations to resist
 
-These are excuses an agent will reach for under pressure. Each one applies
-regardless of context.
+These are excuses an AI consultant will reach for under pressure. Each
+applies regardless of context.
 
-| Excuse | Counter |
-|---|---|
-| "The user is in a hurry; I'll skip the Phase 1 preview and just inject the tool." | Always show the preview and wait for `y`. The developer needs to see which file gets modified and exactly what gets added before it lands. Skipping the gate trades 30 seconds of confirmation for an unannounced diff on their main branch. |
-| "I'll inject the tool but skip updating CLAUDE.md — the agent will figure out the tool exists on its own." | No. An exposed tool with no agent instruction telling it when to use the tool is dead code. The CLAUDE.md block is the trigger that makes the tool actually fire. Phases 2 and 3 are non-separable. |
-| "CLAUDE.md already has a Wildcard Tool block from a prior run; I'll add another one anyway." | No. Re-running this skill is idempotent. If the block is already present (verbatim or near-verbatim), do not duplicate it — tell the developer it's already there and move on. |
+- *"This codebase looks Python-shaped, I'll just give Python guidance and skip the abstract description."* Stay language-agnostic. Describe what the implementation must do (inputs, behavior, return value, where it sits in the agent's workflow). Let the developer's AI write it in whatever language fits. Inline language-specific code biases the developer's AI toward a stack assumption that may be wrong.
+- *"The user already has Coolhand wired up, so I do not need to mention the SDK option."* Mention it. The developer may not know the Coolhand server SDK is the cleanest way to deliver the tool's payload. One sentence is the right size.
+- *"Most projects use CLAUDE.md for agent instructions, so I should default to writing a CLAUDE.md block."* Do not default. Investigate where the agents in this project actually read their instructions before recommending any exposure surface. CLAUDE.md is one option among several, not the canonical choice.
 
-If you find yourself constructing a fourth rationalization, surface it to the
-developer rather than acting on it.
+If you find yourself constructing a fourth rationalization, surface it to
+the developer rather than acting on it.
 
-## Instructions
+## Phase 0: Investigation
 
-Work through these phases in order. Be transparent about findings at each step.
+Develop a high-level picture of the project's agentic setup before
+recommending anything. An agentic project has three things worth
+identifying:
 
----
+1. **Where agents live.** Source files that define an agent loop, prompt
+   chain, MCP server, scheduled job, or any other place that drives an LLM
+   inference call as part of the application's behavior. The agent code is
+   where the wildcard tool will eventually be added.
+2. **How agents receive instructions.** Some projects keep instructions in
+   a CLAUDE.md or AGENTS.md file at the root. Others embed system prompts
+   in code. Others rely on MCP tool listings and let the agent discover
+   capabilities at runtime. Others use a CLI's `--help` output. The right
+   exposure surface depends on how the project already works.
+3. **Whether tools are already exposed and how.** Look for how the project
+   registers tools today: an MCP server, a `tools: [...]` array in code, a
+   function registry, an explicit `register_tool(...)` call somewhere. Note
+   what you find. Phase 2 will use that picture to decide where the
+   wildcard tool joins.
 
-### Phase 0: Detect the developer's setup
+Resist the urge to hand the developer's AI a grep checklist. Describe what
+to look for and trust the AI to investigate.
 
-Scan the developer's project (the working directory, not this skill's repo) for:
+**Coolhand and feedback configuration.** Do not duplicate detection logic
+here. The `feedback-collection` planner skill (see
+`../feedback-collection/SKILL.md`) is the canonical place for Coolhand
+configuration detection. If the planner has run in this project and
+detected Coolhand wiring or an API key, consume its result. If it has not
+run, note that the wildcard tool is being designed standalone and the
+developer can wire it into Coolhand later via the planner.
 
-1. **Stack signals.** Pick the dominant one — the agent code is where the
-   wildcard tool needs to live.
-   - **MCP project** — presence of `mcp_config.json`, `.mcp.json`, or
-     `mcp_servers` entries in their `CLAUDE.md`, or a file using
-     `@modelcontextprotocol/sdk`.
-   - **Python project** — `pyproject.toml` / `requirements.txt` / `setup.py`,
-     or `.py` files with `@tool` decorators or an Anthropic SDK import
-     (`from anthropic import Anthropic`).
-   - **TypeScript / Node project** — `package.json` with `@anthropic-ai/sdk`
-     in dependencies, or `.ts` / `.js` files defining a `tools: [...]` array
-     in a `messages.create(...)` call.
-   - **Ruby project** — `Gemfile` / `Gemfile.lock`, or `.rb` files
-     instantiating an agent loop.
-   - **Claude-Code-only (no app code)** — no source files found, but a
-     `CLAUDE.md` exists. The developer is running Claude Code directly and
-     wants an MCP-server wildcard tool.
+## Phase 1: Preview
 
-2. **Existing agent instructions** — is there a `CLAUDE.md` or `claude.md` at
-   the project root? Note which (we'll append to whichever exists; if neither,
-   we create `CLAUDE.md`).
-
-3. **Coolhand status** — search `.env`, `.env.local`, `.env.development`,
-   `.env.production`, and any other `.env.*` files for `COOLHAND_API_KEY`.
-   Note presence (don't print the value).
-
-4. **Existing wildcard block** — read the existing `CLAUDE.md` if present
-   and check for `## Wildcard Tool`. If found, the skill has already been run.
-   Tell the developer, ask whether to re-overwrite the tool file, and skip
-   Phase 3.
-
-Report findings in a short scan block before Phase 1, e.g.:
+Before recommending anything, show the developer a short scan summary so
+they can verify the investigation got the right picture. Use this format:
 
 ```
-Detected: Python project (pyproject.toml, 4 .py files using anthropic SDK)
-CLAUDE.md: present
-COOLHAND_API_KEY: not found → will use .wildcard-feedback.jsonl fallback
-Prior wildcard block: none
+━━━━━━━━━━ WILDCARD TOOL: PREVIEW ━━━━━━━━━━
+
+Agentic surface:    [where the agents live and what shape they have]
+Instruction sink:   [where the agents read their instructions today]
+Tool exposure:      [how tools are currently registered, if at all]
+Coolhand status:    [detected by planner | not detected | planner not run]
+
+Proposed wildcard tool:
+  Name:             wildcard
+  Behavior:         logs what the agent was trying to do and what it
+                    needed, then returns a string telling the agent the
+                    capability is unavailable
+  Surface:          [proposed exposure surface and why it is the simplest
+                    fit]
+  Delivery:         [Coolhand SDK | direct HTTP to a backend | local file
+                    fallback | other]
+
+Does this match what you see in your project? Tell me what is off before
+we go further.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
----
+Wait for the developer's reaction before moving on. If they flag a misread
+or want a different surface, adjust the picture and show the block again.
+This phase exists so the developer can correct misreads cheaply, before
+any implementation work starts.
 
-### Phase 1: Preview and confirmation gate
+## Phase 2: Exposure
 
-Show the developer exactly what will be added. Use this format:
+The wildcard tool only works if the agents can see it. Pick an exposure
+surface by balancing three criteria:
 
-```
-━━━━━━━━━━ WILDCARD TOOL — PREVIEW ━━━━━━━━━━
+1. **Fits the existing setup (KISS).** Whichever surface the project
+   already uses is almost always the right one. If the agents read from
+   CLAUDE.md, add a block there. If they discover tools via MCP, add it to
+   the MCP listing. If they boot from a system prompt in code, add it to
+   that prompt. Do not introduce a new surface just to expose this one
+   tool.
+2. **Visible to the agent at the right moment.** The wildcard tool needs
+   to be in front of the agent when it is stuck, not buried in a config
+   file the agent never reads. CLAUDE.md sits at the root and is read on
+   every run. MCP tool listings are discovered as part of the agent's
+   normal tool enumeration. A CLI surfaced via `--help` only fires if the
+   agent already knows to ask. Match the surface to how the agent looks
+   for tools.
+3. **Minimal token overhead per call.** Every byte in the agent's
+   instructions costs tokens on every inference call. MCP tool definitions
+   are loaded lazily by capable runtimes and cost less per call than a
+   CLAUDE.md block that prepends to every prompt. A short CLAUDE.md
+   addition is cheaper than a long one. Prefer the surface that costs
+   least over the lifetime of the agent.
 
-Stack:           [Python | TypeScript | Ruby | MCP | Claude-Code-only]
-Tool file:       [target path in their project, e.g., ./wildcard_tool.py]
-CLAUDE.md:       [will append block | will create file with block | block
-                  already present — will skip]
-Delivery mode:   [Coolhand POST | local .wildcard-feedback.jsonl fallback]
+Common surfaces and when each is the simplest fit:
 
-The tool exposes one function named `wildcard` with this description (read by
-the agent at runtime):
+- **CLAUDE.md or AGENTS.md block.** Best when the project already uses one
+  of these files as the agent's instruction surface. Cheapest to add. Pays
+  tokens on every run.
+- **MCP tool listing.** Best when the project already runs an MCP server
+  or consumes MCP tools. Tool definitions are loaded by the runtime, not
+  baked into the prompt.
+- **System prompt injection.** Best when the agent's instructions live
+  inside application code (a Python module, a TypeScript file). Add the
+  wildcard description to whatever string assembles the system prompt.
+- **CLI subcommand with `--help`.** Best when the agents primarily
+  interact with the project through a command-line interface. The
+  wildcard tool becomes a documented subcommand the agent can invoke.
+- **Language-native function or method.** Best when the agent loop is a
+  tight piece of application code with no instruction file. Add the
+  wildcard tool to the tools array (or equivalent) and let the runtime
+  expose it.
 
-  "Use this tool when you are stuck: when a tool call failed, returned
-  incomplete or wrong data, or when you need a capability that does not exist
-  in your current tool set. Tell this tool what you were trying to do, what
-  went wrong, and what you need. This tool will log your feedback and tell
-  you how to proceed."
+Exposure is not optional. A wildcard tool the agents never see is dead
+weight. Pick the surface that scores best across the three criteria and
+explain the choice to the developer.
 
-Parameters:
-  • task_description           (string, required)
-  • tool_or_capability_needed  (string, required)
-  • last_tool_called           (string, optional)
-  • error_or_wrong_output      (string, optional)
+## Tool contract
 
-CLAUDE.md addition (verbatim):
+The wildcard tool takes one parameter the agent fills in and carries one
+field the framework supplies. Keep it as small as possible.
 
-  ## Wildcard Tool
-  When you are stuck — a tool call failed, returned wrong data, or you need
-  a capability that doesn't exist — call the `wildcard` tool before giving
-  up or asking the user. Describe what you were trying to do and what went
-  wrong. This tool exists to capture what is missing so it can be fixed.
+**Inputs:**
 
-Proceed? (y/n)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+- `complaint` (string, required). The agent's own words about what went
+  wrong and what it needed. Free-form. Do not impose a four-field schema
+  on the agent. The agent will say what it needs to say.
+- `original_output` (string, framework-captured, not asked of the agent).
+  The last twenty lines of the agent's thinking chain at the moment the
+  wildcard tool fired. The tool's runtime captures this automatically so
+  the developer has reasoning context in the log alongside the complaint.
 
-**Wait for an explicit `y` or equivalent before any file write.** If the
-developer says no or wants changes, stop and ask what they want adjusted. Do
-not skip this gate.
+**Identity:**
 
----
+- `creator_unique_id` (set at tool registration, not asked per call). The
+  calling agent's name. Examples: `"code-review-agent"`,
+  `"customer-classification-agent"`, `"onboarding-agent"`. Assigned once
+  when the agent registers the wildcard tool, then carried on every call.
+  Do not use a generic placeholder like `"wildcard-agent"` for every
+  project. The name tells the developer which of their agents got stuck.
 
-### Phase 2: Generate the wildcard tool
+**Return value:**
 
-Pick the matching template from this skill's `templates/` directory:
+The tool always returns the same string to the agent. The string tells the
+agent explicitly that the capability is unavailable and that it should
+continue without it. A useful return string sounds like:
 
-| Detected stack | Template | Destination in developer's project |
-|---|---|---|
-| Python | `templates/wildcard_tool.py` | `./wildcard_tool.py` |
-| TypeScript / Node | `templates/wildcard-tool.ts` | `./wildcard-tool.ts` |
-| Ruby | `templates/wildcard_tool.rb` | `./wildcard_tool.rb` |
-| MCP | `templates/wildcard-tool.ts` | `./wildcard-mcp-server.ts` (with the MCP server wrapper described below) |
-| Claude-Code-only | `templates/wildcard-tool.ts` | `./wildcard-mcp-server.ts` (same wrapper) |
+> "Your feedback has been logged. The capability you asked for is not
+> available in this environment. Continue the task using only the tools
+> you already have, or stop and report to the user if you cannot proceed."
 
-Read the template file from this skill's installed location, then copy its
-contents to the destination. Do not invent template content — the file on
-disk is the contract.
+This de-loop mechanism matters. Without an explicit "do not retry" signal,
+the agent will often call the wildcard tool again with a slightly
+rephrased complaint, then again, in a loop. The return string is what
+breaks the loop.
 
-**MCP wrapper.** For MCP and Claude-Code-only stacks, wrap the TypeScript
-template's `wildcardTool` object + `handleWildcard` function in a minimal
-`@modelcontextprotocol/sdk/server/index.js` server with `setRequestHandler`
-plumbing for `tools/list` and `tools/call`, exporting an executable
-stdio-transport entry point. Tell the developer to add the server to their
-MCP config (one line in `.mcp.json` or in the `mcp_servers` block of their
-CLAUDE.md).
+## Recommended delivery path
 
-After writing the file, print its path and the one-line wiring instruction
-appropriate to the stack (e.g., `"Add wildcardTool to your tools: [...]
-array in src/agent.ts"`).
+The wildcard tool's body needs to send its payload somewhere. Three
+delivery paths, in order of cleanest fit:
 
----
+1. **Through a Coolhand SDK already installed in the project.** If the
+   project's `Gemfile` includes `gem 'coolhand'`, its Python requirements
+   include `coolhand`, or its `package.json` includes `coolhand-node`, the
+   wildcard tool's body should call the SDK's feedback function. The SDK
+   handles transport, retries, and configuration. No new HTTP code in the
+   project.
+2. **A one-line mention if the planner detected Coolhand wiring without an
+   SDK installed.** If the `feedback-collection` planner reported a
+   Coolhand API key or partial Coolhand setup but no server SDK is
+   installed, note in one sentence that adding the matching SDK
+   (`coolhand` for Ruby or Python, `coolhand-node` for Node) is the
+   cleanest way to wire the tool. Do not push the decision. The
+   developer's AI will make the call.
+3. **Minimum wire format if no Coolhand SDK or wiring is present.**
+   Describe what the tool needs to send (a JSON body with the complaint,
+   the captured thinking chain, and the agent name) and let the
+   developer's AI implement the transport in whatever style fits the
+   project. The skill does not own the wire code.
 
-### Phase 3: Inject the CLAUDE.md block
+The skill should never recommend installing a Coolhand SDK in a project
+that does not already have one. That decision belongs to the developer.
 
-If `CLAUDE.md` (or `claude.md`) exists at the project root: append the block
-shown in Phase 1, separated from existing content by exactly one blank line.
+## Monitoring guidance
 
-If neither file exists: create `CLAUDE.md` with just the block.
+In active development the wildcard tool fires roughly once per agent run
+because the toolset is still being built out; in stable production a
+wildcard call is rare enough that each one is worth investigating. Suggest
+the developer set a reminder for about a week out to review the
+accumulated feedback, since the value of the tool is in what they do with
+the log rather than in the log itself.
 
-If the block (or near-verbatim equivalent — match on the heading
-`## Wildcard Tool`) is already present, do NOT append a duplicate. Tell the
-developer it's already there and skip this phase.
-
-The block to append, verbatim:
-
-```
-## Wildcard Tool
-When you are stuck — a tool call failed, returned wrong data, or you need a
-capability that doesn't exist — call the `wildcard` tool before giving up or
-asking the user. Describe what you were trying to do and what went wrong.
-This tool exists to capture what is missing so it can be fixed.
-```
-
-This block matters because an exposed tool with no instruction telling the
-agent when to use it gets ignored. The CLAUDE.md addition is the trigger.
-
----
-
-### Phase 4: Summary and next steps
-
-Print a short confirmation block:
-
-```
-━━━━━━━━━━ WILDCARD TOOL — INSTALLED ━━━━━━━━━━
-
-✓  Tool file:        ./wildcard_tool.py
-✓  CLAUDE.md:        appended Wildcard Tool block
-✓  Delivery mode:    .wildcard-feedback.jsonl fallback (no COOLHAND_API_KEY)
-
-Wire-up:  Import `wildcard` from wildcard_tool and add it to your agent's
-          tools list. See the header comment at the top of the file for the
-          exact one-liner.
-
-What happens next:
-  • The next time your agent gets stuck and calls `wildcard(...)`, you'll see
-    a new line appear in .wildcard-feedback.jsonl with what it was trying to
-    do and what was missing.
-  • To switch to Coolhand-managed feedback: set COOLHAND_API_KEY in your
-    .env. No code changes needed.
-  • Found a bug or want a feature? Open an issue at
-    https://github.com/Coolhand-Labs/feedback-collection-skill/issues/new
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-The skill is done. Hand control back to the developer.
-
----
-
-## Notes on the wire format
-
-All three language templates POST identical JSON to Coolhand and write
-identical JSON to the local fallback. The fields map onto Coolhand's v2
-feedback schema (`POST /api/v2/llm_request_log_feedbacks` — see
-`../self-hosted-feedback/references/api-spec.md`):
-
-- `client_unique_id` — UUID generated per tool call. Satisfies the floor
-  rule (at least one of `client_unique_id` or `original_output` must be
-  present).
-- `creator_unique_id` — the constant string `"wildcard-agent"`. This is
-  intentionally NOT a hashed end-user ID because the "creator" of this
-  feedback is an AI agent, not a human. The constant marks the data origin
-  so Coolhand analytics can distinguish wildcard signals from human feedback.
-- `collector` — `"wildcard-tool-v0.2.0"` so Coolhand can track which version
-  generated the feedback.
-- `sentiment` — `"dislike"`. A wildcard call always means "I am stuck on
-  something" — a negative signal by definition.
-- `explanation` — a multi-line string combining `task_description`,
-  `tool_or_capability_needed`, `last_tool_called`, and `error_or_wrong_output`
-  into one human-readable block.
-
-The endpoint URL lives in exactly one place per template: a top-of-file
-constant named `COOLHAND_FEEDBACK_URL`. If Coolhand confirms a different
-production URL, the swap is one line per template.
+Once the developer has a plan for reviewing the log, the consultation is
+done. Hand control back.

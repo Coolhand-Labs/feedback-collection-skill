@@ -7,7 +7,7 @@ description: |
   /feedback-collection. Also use when the user mentions Coolhand,
   COOLHAND_API_KEY, coolhand-js, coolhand-node, coolhand-python, or coolhand-ruby.
 user_invocable: true
-version: 0.2.0
+version: 0.1.0
 ---
 
 # Feedback Collection Planner

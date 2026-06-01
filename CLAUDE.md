@@ -27,18 +27,12 @@ This file captures conventions Claude should follow when editing this repo.
 │   │       └── providers.yml    # Provider/SDK detection patterns + per-language extraction snippets
 │   ├── coolhand-integration/    # 3a: install SDKs against managed coolhandlabs.com
 │   │   └── SKILL.md
-│   ├── self-hosted-feedback/    # 3b: scaffold endpoints on user's own backend
-│   │   ├── SKILL.md
-│   │   └── references/
-│   │       ├── api-spec.md                       # Wire format + SQL schemas for self-hosted
-│   │       ├── coolhand-openapi-v2.json          # Snapshot of the v2 spec (canonical form)
-│   │       └── coolhand-openapi-v2.meta.json     # Snapshot metadata: timestamp + SHA-256 + source URL
-│   └── wildcard-tool/           # Standalone: inject an agent-side "complaint box" into any project
+│   └── self-hosted-feedback/    # 3b: scaffold endpoints on user's own backend
 │       ├── SKILL.md
-│       └── templates/
-│           ├── wildcard_tool.py    # Stdlib-only Python template (Anthropic SDK wiring in header)
-│           ├── wildcard-tool.ts    # Node 18+ TypeScript template (native fetch, exports tool + handler)
-│           └── wildcard_tool.rb    # Net::HTTP Ruby template (module-style)
+│       └── references/
+│           ├── api-spec.md                       # Wire format + SQL schemas for self-hosted
+│           ├── coolhand-openapi-v2.json          # Snapshot of the v2 spec (canonical form)
+│           └── coolhand-openapi-v2.meta.json     # Snapshot metadata: timestamp + SHA-256 + source URL
 ├── CHANGELOG.md
 ├── CLAUDE.md                    # This file
 ├── LICENSE                      # Apache-2.0
@@ -178,7 +172,8 @@ When writing skill instructions that involve an operation the `coolhand` CLI cou
 
 ## Versioning and CHANGELOG
 
-- `plugin.json`, `marketplace.json`, and `SKILL.md` `version` fields all track together. Bump them in the same commit.
+- `plugin.json` and `marketplace.json` always track together — bump both in the same commit whenever the plugin is released.
+- Each `SKILL.md` `version` field bumps only when that skill's content changes. Skills whose content is unchanged do not get a version bump even when the plugin version advances.
 - Every change touching SKILL.md, the YAML schema, the validator, or the plugin manifests gets a CHANGELOG entry under `## Unreleased`. Cut a version section from `Unreleased` when publishing.
 - CHANGELOG entries lead with the change, then a brief why. Mirror the style in `CHANGELOG.md`'s existing entries.
 

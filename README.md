@@ -1,6 +1,6 @@
 # Coolhand Feedback Collection Skill
 
-A Claude Code plugin that finds AI/LLM workflows in your codebase and implements best-practice human feedback collection — either against the [managed Coolhand backend](https://coolhandlabs.com) or scaffolded onto your own servers. Also ships a `wildcard-tool` installer that makes invisible AI-agent failures visible.
+A Claude Code plugin that finds AI/LLM workflows in your codebase and implements best-practice human feedback collection — either against the [managed Coolhand backend](https://coolhandlabs.com) or scaffolded onto your own servers.
 
 ## What it does
 
@@ -14,13 +14,7 @@ Run `/coolhand` in any project and the planner skill will:
    - `coolhand-integration` — installs the Coolhand SDKs against `coolhandlabs.com` (default; fastest setup; includes the analytics dashboard)
    - `self-hosted-feedback` — scaffolds Coolhand-compatible endpoints on your own backend (for privacy/compliance/data-residency requirements)
 
-Run `/wildcard-tool` in any AI-agent project and the wildcard-tool installer will:
-
-- Detect your stack (MCP / Python / TypeScript / Ruby / Claude-Code-only) and inject a `wildcard` tool the agent calls when it is stuck — failed tool call, wrong data, or a missing capability
-- Update your `CLAUDE.md` so the agent knows when to use the tool
-- Send feedback to Coolhand if `COOLHAND_API_KEY` is set, otherwise append one JSON line per call to `.wildcard-feedback.jsonl` in your project root (zero-config, no account needed)
-
-The plugin is one install — all four skills load together.
+The plugin is one install — all three skills load together.
 
 It uses the latest SDK documentation from GitHub each time it runs, so recommendations stay current.
 
@@ -38,7 +32,7 @@ In Claude Code, add this repo as a plugin marketplace and install the plugin:
 /plugin install feedback-collection@coolhand
 ```
 
-All four skills become available globally across all your projects. You invoke the planner directly (`/coolhand` or `/feedback-collection`) for human-feedback setup, and the wildcard-tool installer directly (`/wildcard-tool`) for agent-side feedback.
+All three skills become available globally across all your projects. You only invoke the planner directly (`/coolhand` or `/feedback-collection`); it dispatches to the implementation skills internally.
 
 ## Usage
 
@@ -55,14 +49,6 @@ To scope the scan to a specific directory:
 ```
 
 The skill scans your codebase and designs a feedback strategy first, then asks for an API key before setting anything up. For managed Coolhand it needs `COOLHAND_API_KEY` (the skill can open a browser flow to get one via `coolhand login`); for self-hosted it needs `FEEDBACK_API_KEY` and `FEEDBACK_API_KEYS`.
-
-To install the agent-side wildcard tool, run:
-
-```
-/wildcard-tool
-```
-
-The installer detects your stack, previews exactly what will be added, and waits for confirmation before injecting the tool and updating your `CLAUDE.md`. No `COOLHAND_API_KEY` is required — the tool falls back to a local `.wildcard-feedback.jsonl` file, and switches to Coolhand the moment you set the key.
 
 ## What makes strong feedback
 
@@ -105,7 +91,6 @@ This plugin is open source. You can read exactly what instructions Claude receiv
 - Planner: [`skills/feedback-collection/SKILL.md`](skills/feedback-collection/SKILL.md)
 - Managed-Coolhand integration: [`skills/coolhand-integration/SKILL.md`](skills/coolhand-integration/SKILL.md)
 - Self-hosted: [`skills/self-hosted-feedback/SKILL.md`](skills/self-hosted-feedback/SKILL.md) (with a Coolhand v2 API reference at [`skills/self-hosted-feedback/references/api-spec.md`](skills/self-hosted-feedback/references/api-spec.md))
-- Wildcard tool installer: [`skills/wildcard-tool/SKILL.md`](skills/wildcard-tool/SKILL.md) (with copy-paste templates for Python, TypeScript, and Ruby at [`skills/wildcard-tool/templates/`](skills/wildcard-tool/templates/))
 
 ## Issues and feedback
 
