@@ -1,4 +1,4 @@
-# See https://git-scm.com/docs/gitattributes for more about git attribute files.
+# Git attributes for this repo. Keep scripts LF and mark generated files.
 
 # Executable scripts must stay LF or their shebang breaks on Linux/CI.
 bin/* eol=lf
