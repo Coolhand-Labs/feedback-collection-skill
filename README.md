@@ -4,7 +4,7 @@ A Claude Code plugin that finds AI/LLM workflows in your codebase and implements
 
 ## What it does
 
-Run `/coolhand` in any project and the planner skill will:
+Run `/feedback-collection` in any project and the planner skill will:
 
 1. **Scan** your codebase (or a scoped path) for LLM inference calls — OpenAI, Anthropic, LangChain, LlamaIndex, Ollama, Bedrock, and more
 2. **Identify** feedback collection opportunities for each workflow, preferring passive signals (zero UI changes) over active ones
@@ -14,7 +14,9 @@ Run `/coolhand` in any project and the planner skill will:
    - `coolhand-integration` — installs the Coolhand SDKs against `coolhandlabs.com` (default; fastest setup; includes the analytics dashboard)
    - `self-hosted-feedback` — scaffolds Coolhand-compatible endpoints on your own backend (for privacy/compliance/data-residency requirements)
 
-The plugin is one install — all three skills load together.
+`/wildcard-tool` is also available as a standalone skill: it advises on adding a wildcard "complaint box" tool to any agentic project so silent agent failures become visible. See [Your AI Agent Has Notes](https://michael.carroll.io/talks/2026/your-ai-agent-has-notes) for the background on why this matters and how to act on what the tool surfaces.
+
+The plugin is one install — all four skills load together.
 
 It uses the latest SDK documentation from GitHub each time it runs, so recommendations stay current.
 
@@ -32,20 +34,20 @@ In Claude Code, add this repo as a plugin marketplace and install the plugin:
 /plugin install feedback-collection@coolhand
 ```
 
-All three skills become available globally across all your projects. You only invoke the planner directly (`/coolhand` or `/feedback-collection`); it dispatches to the implementation skills internally.
+All three skills become available globally across all your projects. You only invoke the planner directly (`/feedback-collection`); it dispatches to the implementation skills internally.
 
 ## Usage
 
 Open Claude Code in your project and run:
 
 ```
-/coolhand
+/feedback-collection
 ```
 
 To scope the scan to a specific directory:
 
 ```
-/coolhand src/ai/
+/feedback-collection src/ai/
 ```
 
 The skill scans your codebase and designs a feedback strategy first, then asks for an API key before setting anything up. For managed Coolhand it needs `COOLHAND_API_KEY` (the skill can open a browser flow to get one via `coolhand login`); for self-hosted it needs `FEEDBACK_API_KEY` and `FEEDBACK_API_KEYS`.
@@ -91,6 +93,7 @@ This plugin is open source. You can read exactly what instructions Claude receiv
 - Planner: [`skills/feedback-collection/SKILL.md`](skills/feedback-collection/SKILL.md)
 - Managed-Coolhand integration: [`skills/coolhand-integration/SKILL.md`](skills/coolhand-integration/SKILL.md)
 - Self-hosted: [`skills/self-hosted-feedback/SKILL.md`](skills/self-hosted-feedback/SKILL.md) (with a Coolhand v2 API reference at [`skills/self-hosted-feedback/references/api-spec.md`](skills/self-hosted-feedback/references/api-spec.md))
+- Wildcard-tool consultant: [`skills/wildcard-tool/SKILL.md`](skills/wildcard-tool/SKILL.md)
 
 ## Issues and feedback
 

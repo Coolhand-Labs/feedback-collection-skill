@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.3.2 — 2026-06-04
+
 - **Rewrote `wildcard-tool` skill as a consultant, not an installer.** Removes the stack-detection installer, the three language templates (Python, TypeScript, Ruby), and the assumption that CLAUDE.md is the agent's instruction surface. The skill now advises the developer's AI on three things: where the agents in this project live and read their instructions (Phase 0 investigation), what surface to expose the wildcard tool through (Phase 2 exposure, balanced across KISS, agent visibility, and per-call token cost), and how to wire the tool's payload (through an installed Coolhand SDK if present, otherwise a minimum wire format the developer's AI implements). Drops the four-field input schema in favor of one free-form `complaint` from the agent plus a framework-captured `original_output` (last 20 lines of the thinking chain) and a `creator_unique_id` set at registration to the agent's actual name. Bumps `wildcard-tool/SKILL.md` to 0.3.0.
 
 - **coolhand-cli v0.3.1 compatibility:** update F.3 version gate and all version fields to v0.3.1+.

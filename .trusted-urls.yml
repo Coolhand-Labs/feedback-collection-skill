@@ -40,6 +40,9 @@ infrastructure:
   - http://localhost
   - http://127.0.0.1
 
+  # Talk / presentation links referenced in README for user-facing context.
+  - https://michael.carroll.io/
+
   # RFC-reserved test fixtures used by bin/check-skill-urls --self-test.
   # example.com is IANA-operated; .invalid is RFC 2606 reserved.
   - https://example.com
