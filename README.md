@@ -14,16 +14,11 @@ Run `/feedback-collection` in any project and the planner skill will:
    - `coolhand-integration` — installs the Coolhand SDKs against `coolhandlabs.com` (default; fastest setup; includes the analytics dashboard)
    - `self-hosted-feedback` — scaffolds Coolhand-compatible endpoints on your own backend (for privacy/compliance/data-residency requirements)
 
-`/wildcard-tool` is also available as a standalone skill: it advises on adding a wildcard "complaint box" tool to any agentic project so silent agent failures become visible. See [Your AI Agent Has Notes](https://michael.carroll.io/talks/2026/your-ai-agent-has-notes) for the background on why this matters and how to act on what the tool surfaces.
+`/wildcard-tool` is also available as a standalone skill: skill consults on adding a wildcard "complaint box" tool to any agentic project so silent agent failures become visible. See [Your AI Agent Has Notes](https://michael.carroll.io/talks/2026/your-ai-agent-has-notes) for the background on why this matters and how to act on what the tool surfaces.
 
 The plugin is one install — all four skills load together.
 
 It uses the latest SDK documentation from GitHub each time it runs, so recommendations stay current.
-
-## Prerequisites
-
-- [Claude Code](https://claude.ai/code) installed
-- A Coolhand API key — get one at [coolhandlabs.com](https://coolhandlabs.com)
 
 ## Installation
 
