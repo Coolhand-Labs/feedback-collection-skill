@@ -9,7 +9,7 @@ description: |
   or mentions Coolhand's wildcard skill, agent-side feedback collection,
   or zero-config ways to log what their agent gets stuck on.
 user_invocable: true
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Wildcard Tool Consultant
@@ -25,6 +25,11 @@ The developer's AI implements the tool in whatever language and shape fits
 their codebase. This skill never writes to the developer's project. Its job
 is to investigate, recommend, and explain. Implementation is downstream.
 
+Wildcard only pays off in projects where agents make tool or API calls as
+part of their operation. Without tool-calling, there are no unknown-unknown
+tool failures to surface. Do not recommend this skill to projects where the
+agent loop is purely prompt-in → text-out with no registered tools.
+
 ## KISS
 
 Default to the simplest, most maintainable solution that fits the project's
@@ -39,6 +44,28 @@ existing setup.
 The right answer is almost always whatever the project already does, with
 one more function added. Suggesting infrastructure the project does not
 have is rarely worth the cost.
+
+## Framing the tool
+
+How you describe the wildcard tool determines what agents do with it.
+Agents reach for fix-it tools; they skip complaint forms. The description
+should frame the tool as "use this to request something you can't do" not
+"report what went wrong." An agent that believes calling the tool will fix
+its problem will call it when stuck. An agent that reads it as a feedback
+channel will not — it will loop, fail silently, or ask the user instead.
+
+That is the principle; the current implementation is a pragmatic compromise.
+The Tool contract below still collects a free-form `complaint` field — that
+is the best wildcard implementation available today, so don't worry that the
+underlying field is named for what went wrong. Lead the agent-facing
+description with the request framing ("ask for a capability you don't have");
+the framing the agent reads at call time is what drives whether it uses the
+tool, not the field name behind it.
+
+Wildcard is a discovery instrument for unknown unknowns, not permanent
+infrastructure. Once the patterns it surfaces stabilize, close the capability
+gaps it revealed and remove or deemphasize the tool. An agent that keeps
+calling wildcard on the same issue is telling you to ship the real fix.
 
 ## Rationalizations to resist
 
@@ -204,6 +231,24 @@ the agent will often call the wildcard tool again with a slightly
 rephrased complaint, then again, in a loop. The return string is what
 breaks the loop.
 
+**Anti-pattern — success-flavored return strings.** Returning `"Data
+retrieved successfully."` or any string that reads as confirmation of
+action creates false hope: the agent infers the capability exists and will
+call again. An honest failure signal stops the agent; a polite lie loops
+it. The return must unambiguously convey failure: `"This request cannot be
+fulfilled in this session."` is the minimum bar.
+
+**Kill threshold.** Some agents loop even with an honest null. Recommend
+the developer configure a maximum wildcard call count per session (2 is a
+reasonable default): if the same agent calls wildcard twice in one run,
+terminate or dismiss the task rather than letting it continue. Document
+this threshold in the tool's registration comment or an adjacent system
+prompt note so the behavior is explicit and adjustable.
+
+If the project has no existing pattern for capping or terminating agent
+runs, don't build one just for this. Ask the developer whether they want to
+add a threshold now, or note it somewhere as a later improvement.
+
 ## Recommended delivery path
 
 The wildcard tool's body needs to send its payload somewhere. Three
@@ -234,11 +279,12 @@ that does not already have one. That decision belongs to the developer.
 ## Monitoring guidance
 
 In active development the wildcard tool fires roughly once per agent run
-because the toolset is still being built out; in stable production a
-wildcard call is rare enough that each one is worth investigating. Suggest
-the developer set a reminder for about a week out to review the
-accumulated feedback, since the value of the tool is in what they do with
-the log rather than in the log itself.
+because the toolset is still being built out; end-of-day review catches
+the pattern while context is fresh. In stable production, a weekly batch
+review is sufficient — wildcard calls are rare at this stage, but the
+patterns they form across a few records are still more informative than
+reacting to any single call. Do not default to real-time alerting:
+the value is in pattern analysis across a batch, not per-call response.
 
 Once the developer has a plan for reviewing the log, the consultation is
 done. Hand control back.
