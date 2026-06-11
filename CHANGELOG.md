@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Optimization browsing guidance (issue #16):** document three undocumented patterns in Phase F.2 of `coolhand-integration`: (1) pagination — after page 1, always offer to fetch page 2 via `--page 2`; (2) full-detail flow — `search-optimizations` returns `optimization_thesis` only; after listing, always offer `get-optimization <id>` for the full `analysis`, `plan`, `comments`, `orchestrator_messages`, and the conditional `coding_prompt` / `pr_number` / `pr_url` fields; (3) null complexity/impact — these are string enums (`low_complexity`/`medium_complexity`/`high_complexity` and `low_impact`/`medium_impact`/`high_impact`), not integers; null means "not yet scored." Bumped `coolhand-integration` SKILL.md to v0.3.2.
+
 - **coolhand-cli v0.3.1 compatibility:** update F.3 version gate and all version fields to v0.3.1+.
 
 - **coolhand-cli v0.3.0 compatibility:** drop the filter-type parenthetical from the `search-optimizations` one-liner in F.2 — it was already incomplete after CLI additions (pagination, sort, workload/template filters) and will keep drifting; `coolhand help search-optimizations` is the authoritative flag reference. Update F.3 version gate from v0.2.0+ to v0.3.0+: v0.2.0's `get-optimization` had a broken MCP parameter (`id` instead of `optimization_id`) making all calls fail; v0.3.0 is the first fully correct release.
