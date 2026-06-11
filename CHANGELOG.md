@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Guardrail: no synthesis when get-optimization fails (issue #15):** Phase F.2 now has an explicit error-handling rule — if `coolhand get-optimization` returns an error, report it and stop; do not reconstruct `analysis`, `plan`, or `orchestrator_messages` from search results. Added the corresponding rationalization to the "Rationalizations to resist" table (observed in a live session where a parameter name bug caused all calls to fail and Claude fabricated a complete summary). Bumped `coolhand-integration` to 0.3.2.
+
 - **coolhand-cli v0.3.1 compatibility:** update F.3 version gate and all version fields to v0.3.1+.
 
 - **coolhand-cli v0.3.0 compatibility:** drop the filter-type parenthetical from the `search-optimizations` one-liner in F.2 — it was already incomplete after CLI additions (pagination, sort, workload/template filters) and will keep drifting; `coolhand help search-optimizations` is the authoritative flag reference. Update F.3 version gate from v0.2.0+ to v0.3.0+: v0.2.0's `get-optimization` had a broken MCP parameter (`id` instead of `optimization_id`) making all calls fail; v0.3.0 is the first fully correct release.
