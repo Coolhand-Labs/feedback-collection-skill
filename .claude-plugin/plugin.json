@@ -19,5 +19,11 @@
     "openai",
     "anthropic",
     "evaluation"
+  ],
+  "skills": [
+    "./skills/feedback-collection",
+    "./skills/coolhand-integration",
+    "./skills/self-hosted-feedback",
+    "./skills/wildcard-tool"
   ]
 }

@@ -1,0 +1,52 @@
+name: Check skill install
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**/SKILL.md"
+      - ".claude-plugin/plugin.json"
+      - ".github/workflows/check-skill-install.yml"
+  pull_request:
+    paths:
+      - "skills/**/SKILL.md"
+      - ".claude-plugin/plugin.json"
+      - ".github/workflows/check-skill-install.yml"
+  schedule:
+    # Weekly Tuesday 12:00 UTC — catches ecosystem breakage independent of code changes.
+    - cron: "0 12 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install skills CLI
+        run: npm install -g skills
+
+      - name: Install skills from this repo
+        run: skills add . --copy
+        # --copy avoids symlink issues on CI; installs to ./.claude/skills/ etc.
+
+      - name: Verify all four skills installed for Claude Code
+        run: |
+          MISSING=()
+          for skill in feedback-collection coolhand-integration self-hosted-feedback wildcard-tool; do
+            if [ ! -f ".claude/skills/${skill}/SKILL.md" ]; then
+              MISSING+=("$skill")
+            fi
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "Missing skills: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "All four skills installed successfully."

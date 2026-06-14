@@ -22,14 +22,20 @@ It uses the latest SDK documentation from GitHub each time it runs, so recommend
 
 ## Installation
 
-In Claude Code, add this repo as a plugin marketplace and install the plugin:
+```sh
+skills add Coolhand-Labs/feedback-collection-skill -g
+```
+
+Don't have `skills`? Install it first: `npm install -g skills`
+
+If you don't have Node, use Claude Code's built-in marketplace:
 
 ```
 /plugin marketplace add Coolhand-Labs/feedback-collection-skill
 /plugin install feedback-collection@coolhand
 ```
 
-All three skills become available globally across all your projects. You only invoke the planner directly (`/feedback-collection`); it dispatches to the implementation skills internally.
+All four skills install together. You only invoke the planner directly (`/feedback-collection`); it dispatches to the implementation skills internally.
 
 ## Usage
 
