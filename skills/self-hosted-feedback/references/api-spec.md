@@ -55,20 +55,21 @@ Create a feedback entry.
 | `explanation` | string | use | Free-form text explaining the rating. |
 | `revised_output` | string | use | The user's edited version of the AI output. Highest signal. |
 | `collector` | string | use | Same semantics as on logs. |
+| `parent_feedback_hashid` | string | use | Chained feedback: hashid of the prior feedback call in the same interaction flow. See `references/chained-partial-feedback.md`. |
+| `focus_section` | string | use | Partial feedback: verbatim selected substring of `original_output`. |
+| `focus_range` | object | use | Partial feedback: `{start: int, end: int}` character offsets (0-indexed, inclusive start, exclusive end) against `original_output`. |
 | `workload_hashid` | string | **defer** | Workload grouping. See issue #4. |
-| `parent_feedback_hashid` | string | **defer** | Chained feedback. See issue #3. |
-| `focus_section` | string | **defer** | Partial-feedback target text. See issue #3. |
-| `focus_range` | object | **defer** | `{start: int, end: int}`. See issue #3. |
 | `coolhand_fingerprint_id` | string | **never** | Set by coolhand-js widget only. Server code must not populate. |
 
-**Response 201:** Returns the inserted feedback row, including server-assigned `id` (a hashid string), `client_id`, `created_at`, `updated_at`.
+**Response 201:** Returns the inserted feedback row, including server-assigned fields: `id` (a hashid string), `client_id`, `focus_range_stale` (boolean, always `false` on create), `created_at`, `updated_at`.
 
 ### `PATCH /api/v2/llm_request_log_feedbacks/{id}`
 
 Update an existing feedback entry.
 
-- Body accepts the same fields as POST.
+- Body accepts the same client-settable fields as POST (`focus_range_stale` is server-set; ignore if a client sends it).
 - Identity fields (`creator_unique_id`, `llm_request_log_id`, `llm_provider_unique_id`) are immutable. Reject changes with 422.
+- If `original_output` is present in the body and the existing row has `focus_range_start IS NOT NULL`, set `focus_range_stale = true` as part of the same update.
 - Return the updated row with 200.
 - Return 404 if `{id}` doesn't exist.
 
@@ -123,6 +124,11 @@ CREATE TABLE llm_request_log_feedbacks (
   client_unique_id        TEXT,
   creator_unique_id       TEXT,
   collector               TEXT,
+  parent_feedback_hashid  TEXT,
+  focus_section           TEXT,
+  focus_range_start       INTEGER,
+  focus_range_end         INTEGER,
+  focus_range_stale       BOOLEAN NOT NULL DEFAULT FALSE,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT feedback_floor CHECK (client_unique_id IS NOT NULL OR original_output IS NOT NULL)
@@ -156,6 +162,11 @@ CREATE TABLE llm_request_log_feedbacks (
   client_unique_id        VARCHAR(255),
   creator_unique_id       VARCHAR(255),
   collector               VARCHAR(255),
+  parent_feedback_hashid  VARCHAR(255),
+  focus_section           TEXT,
+  focus_range_start       INT,
+  focus_range_end         INT,
+  focus_range_stale       BOOLEAN NOT NULL DEFAULT FALSE,
   created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (llm_request_log_id) REFERENCES llm_request_logs(id),
@@ -189,6 +200,11 @@ CREATE TABLE llm_request_log_feedbacks (
   client_unique_id        TEXT,
   creator_unique_id       TEXT,
   collector               TEXT,
+  parent_feedback_hashid  TEXT,
+  focus_section           TEXT,
+  focus_range_start       INTEGER,
+  focus_range_end         INTEGER,
+  focus_range_stale       INTEGER NOT NULL DEFAULT 0,   -- 0/1 boolean
   created_at              TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   updated_at              TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   CHECK (client_unique_id IS NOT NULL OR original_output IS NOT NULL)

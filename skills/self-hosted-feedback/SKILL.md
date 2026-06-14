@@ -155,7 +155,7 @@ Three endpoints, in the user's framework. All require API key auth (Phase E). Se
 
 ### `POST /api/v2/llm_request_log_feedbacks`
 
-- Accept the field set from Phase C's `llm_request_log_feedbacks` table (minus `id`/`client_id`/`created_at`/`updated_at`, which are server-set).
+- Accept the field set from Phase C's `llm_request_log_feedbacks` table (minus `id`/`client_id`/`focus_range_stale`/`created_at`/`updated_at`, which are server-set). `focus_range_stale` is always `false` on create and must be ignored if a client sends it.
 - If both `sentiment` and `like` are sent, `sentiment` wins; persist `sentiment` and ignore `like`.
 - Return the inserted row with status 201.
 

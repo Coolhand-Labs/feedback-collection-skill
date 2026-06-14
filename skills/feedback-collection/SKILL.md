@@ -71,6 +71,8 @@ For each AI inference call found, note:
 
 If a file appears to make inference calls but its role is ambiguous — e.g., it looks like a relay, adapter, or proxy forwarding requests on behalf of external callers — read the full file before drawing a conclusion. Check whether this application *consumes* the inference output itself or merely forwards it. Resolve every such ambiguity yourself before presenting findings; do not ask the user to confirm scope until every candidate file has been examined.
 
+For each inference-call site found, also note whether the agent at that site **registers or invokes tools as part of its operation** — for example, an MCP server, an explicit tool-call loop, or tool instructions in its prompt. Record this as `tool_calling_detected: true/false` alongside each inference-call site; it drives the wildcard eligibility check in Phase 4.
+
 ---
 
 ### Phase 2: Tech Stack Detection
@@ -227,6 +229,18 @@ SUMMARY
 ───────
   Passive: [N] workflow(s) — no UI changes
   Active:  [N] workflow(s) — UI changes need approval
+
+[Include the following block only when tool_calling_detected: true for at
+least one workflow AND a clear tool-discovery surface exists in the project.
+Omit entirely otherwise — do not mention wildcard if conditions aren't met.]
+
+WILDCARD OPPORTUNITY
+────────────────────
+  Eligible agents:   [list agents/files where tool-calling was detected]
+  Suggested surface: [MCP tool listing | tools array in <file> | other]
+  Why it fits:       [one sentence: these agents make tool calls and already
+                      discover tools via this surface]
+  → After implementation, run /wildcard-tool to set this up.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -274,7 +288,13 @@ Dispatch based on the answer:
   - **Honest caveat to share with the user:** the v2 API does not yet expose export endpoints (see [issue #5](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/5)), so today "migrate later" means starting fresh in self-host with no historical data carried over. The user should know this before deciding.
 - **"both" or unclear** → ask the user to pick one for v0.1; the other can be wired up later.
 
-Each implementation skill picks up the proposal context and the strategy. The planner is done after dispatch.
+Each implementation skill picks up the proposal context and the strategy.
+
+**Wildcard follow-up (conditional).** If a WILDCARD OPPORTUNITY block was shown in Phase 4, after the implementation skill has been invoked, offer once:
+
+> "Once the integration is done, I can also set up the wildcard tool for your agents — it sits in your code and is a best-practice pattern for getting targeted reports from agents when they're struggling or hit problems with your tools. We can do it now or later."
+
+If the user says now, invoke the `wildcard-tool` skill. If later or no, drop it — one offer only. Do not mention wildcard if no WILDCARD OPPORTUNITY block was shown.
 
 ---
 

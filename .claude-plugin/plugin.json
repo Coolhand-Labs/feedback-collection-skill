@@ -1,6 +1,6 @@
 {
   "name": "feedback-collection",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Find AI/LLM workflows and implement Coolhand human feedback collection",
   "author": {
     "name": "Coolhand Labs",
