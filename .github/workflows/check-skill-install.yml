@@ -3,15 +3,7 @@ name: Check skill install
 on:
   push:
     branches: [main]
-    paths:
-      - "skills/**/SKILL.md"
-      - ".claude-plugin/plugin.json"
-      - ".github/workflows/check-skill-install.yml"
   pull_request:
-    paths:
-      - "skills/**/SKILL.md"
-      - ".claude-plugin/plugin.json"
-      - ".github/workflows/check-skill-install.yml"
   schedule:
     # Weekly Tuesday 12:00 UTC — catches ecosystem breakage independent of code changes.
     - cron: "0 12 * * 2"
