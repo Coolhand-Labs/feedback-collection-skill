@@ -179,6 +179,20 @@ Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is mi
 
 **If `coolhand get-optimization` (or any optimization command) returns an error:** report the exact error message to the user and stop. Do not attempt to reconstruct optimization detail from `search-optimizations` results. `search-optimizations` intentionally omits `analysis`, `plan`, and `orchestrator_messages` — those fields only exist in the `get-optimization` response. Suggest: "This looks like a tool error — try `coolhand get-optimization --help` or check that the optimization ID is correct."
 
+**Pagination.** `search-optimizations` returns one page at a time. After showing page 1, always offer: "You have N optimizations across P pages. Want me to fetch page 2?" Use `coolhand search-optimizations --page 2` (and so on) for subsequent pages. Do not summarize page 1 results as if you've seen everything.
+
+**Full-detail flow.** The search output returns a short summary (`optimization_thesis`) and intentionally omits `analysis`, `plan`, and `orchestrator_messages`. After showing a listing, always offer: "Want me to get the full analysis and action plan for any of these?" Then use `coolhand get-optimization <id>`. Never present `optimization_thesis` as if it were the full analysis. The full record from `get-optimization` includes:
+- `analysis` — full diagnostic write-up
+- `plan` — step-by-step implementation plan
+- `comments` — human feedback added via `add-optimization-comment`
+- `orchestrator_messages` — agent conversation history (context for how the optimization was developed)
+- `coding_prompt` — the implementation prompt from the most recent change suggestion that has one
+- `pr_number` / `pr_url` — linked pull/merge request, when one exists
+
+`coding_prompt` and the PR fields are conditional — they are omitted entirely when no change suggestion supplies them, so do not expect them to always be present. (`search-optimizations` also returns `pr_number`/`pr_url` per result, but not `coding_prompt`.)
+
+**Null complexity/impact.** `complexity` and `impact` are string enum fields — `complexity` is one of `low_complexity` / `medium_complexity` / `high_complexity`, and `impact` is one of `low_impact` / `medium_impact` / `high_impact`. Either may be `null` while the agent is still processing the optimization. This is expected, not an error. Describe null values as "not yet scored" — never as "broken" or "missing data."
+
 ### F.3 — CLI upgrade (if subcommands are missing)
 
 If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.3.1+). Upgrade and retry:
