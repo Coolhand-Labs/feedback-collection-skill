@@ -55,7 +55,7 @@ Create a feedback entry.
 | `explanation` | string | use | Free-form text explaining the rating. |
 | `revised_output` | string | use | The user's edited version of the AI output. Highest signal. |
 | `collector` | string | use | Same semantics as on logs. |
-| `parent_feedback_hashid` | string | use | Chained feedback: hashid of the prior feedback call in the same interaction flow. See `references/chained-partial-feedback.md`. |
+| `parent_feedback_hashid` | string | use | Chained feedback: hashid of the prior feedback call in the same interaction flow. See `chained-partial-feedback.md`. |
 | `focus_section` | string | use | Partial feedback: verbatim selected substring of `original_output`. |
 | `focus_range` | object | use | Partial feedback: `{start: int, end: int}` character offsets (0-indexed, inclusive start, exclusive end) against `original_output`. |
 | `workload_hashid` | string | **defer** | Workload grouping. See issue #4. |
