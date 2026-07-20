@@ -7,7 +7,7 @@ description: |
   /feedback-collection. Also use when the user mentions Coolhand,
   COOLHAND_API_KEY, coolhand-js, coolhand-node, coolhand-python, or coolhand-ruby.
 user_invocable: true
-version: 0.2.0
+version: 0.2.1
 ---
 
 # Feedback Collection Planner
@@ -99,6 +99,8 @@ Use the best available option, in priority order. **At least one of `client_uniq
    When `server_sdk_interceptor` patterns (from `detection-patterns/providers.yml`) appear in an initializer or boot file — not in a comment, env file, or dependency manifest alone — the interceptor is active and capturing `llm_request_log_id`. Do not ask for confirmation; see `detection-patterns/providers.yml` → `server_sdk_log_id_extraction` for per-language access patterns. A bare `existing_coolhand` hit (`CoolhandJS`, `COOLHAND_API_KEY`, or the unqualified string `coolhand`) is **not** sufficient — those match frontend-only or unconfigured states.
 
 2. **`llm_provider_unique_id`** *(second best)* — the unique ID the LLM provider assigns to each response. The Coolhand backend uses this for **Tier 0 (zero-ambiguity) matching** — a direct lookup that is faster and more reliable than content-based matching. Capture it from the raw response object before any transformation. See `source_apis.yml` (in this skill's directory) for the field name and example value per provider; see `detection-patterns/providers.yml` → `request_id_extraction` for per-language extraction snippets.
+
+   > **OpenAI / Azure OpenAI:** use `response.id` (`chatcmpl-…`) from the response body — not the `x-request-id` response header (`req-…`). The header is not ingested by the backend; passing it causes Tier 0 matching to fail silently.
 
 3. **`client_unique_id`** *(backstop, always send)* — a unique ID from your own system for this request, session, conversation, or task. Something you can look up if needed. Acceptable forms: a hashed primary key, a session UUID, a conversation/job ID — any string that uniquely identifies this LLM run end-to-end.
 

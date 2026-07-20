@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.3.2
+version: 0.3.3
 ---
 
 # Coolhand Integration (Managed)
@@ -103,7 +103,7 @@ Always include in every feedback call:
 
 - `collector: "<your-app-slug>-manual"` — replace `<your-app-slug>` with a slug identifying this integration. Helps Coolhand analytics distinguish your data.
 - `creator_unique_id` — the SHA-256 hashing pattern from the planner's Phase 3.
-- The best available matching field (`llm_request_log_id` if SDK auto-monitor is on — see `../feedback-collection/detection-patterns/providers.yml` → `server_sdk_log_id_extraction` for per-language access patterns; otherwise `llm_provider_unique_id` — see `../feedback-collection/source_apis.yml` for the field name per provider and `../feedback-collection/detection-patterns/providers.yml` → `request_id_extraction` for per-language snippets).
+- The best available matching field (`llm_request_log_id` if SDK auto-monitor is on — see `../feedback-collection/detection-patterns/providers.yml` → `server_sdk_log_id_extraction` for per-language access patterns; otherwise `llm_provider_unique_id` — see `../feedback-collection/source_apis.yml` for the field name per provider and `../feedback-collection/detection-patterns/providers.yml` → `request_id_extraction` for per-language snippets). **OpenAI / Azure OpenAI:** use `response.id` (`chatcmpl-…`) from the response body — not the `x-request-id` header (`req-…`), which is not ingested by the backend.
 - **At least one of `client_unique_id` or `original_output`** — the floor rule from the planner's Phase 3 applies in implementation, not just in planning. Both is better than one when both are available. If using `original_output`, it must be the raw response content before any transformation (see Phase 3 item #4).
 - The highest achievable signal field (`revised_output` > `explanation` > `sentiment`).
 - For binary signals, use `sentiment` (`"like"` / `"dislike"` / `"neutral"`), not the deprecated `like` boolean.

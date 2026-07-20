@@ -62,7 +62,7 @@ It also ensures every feedback item includes a **matching field** so feedback ca
 | Match quality | Field | How it's obtained |
 |--------------|-------|------------------|
 | Best | `llm_request_log_id` | Auto-captured by the Coolhand server SDK |
-| Good | `llm_provider_unique_id` | `x-request-id` header from LLM API response |
+| Good | `llm_provider_unique_id` | Response body `id` field from LLM API response (e.g., `chatcmpl-…` for OpenAI — **not** the `x-request-id` header) |
 | Backstop | `client_unique_id` | Your own session/request/record ID |
 | Backstop | `original_output` | The verbatim LLM output for fuzzy matching |
 

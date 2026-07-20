@@ -7,7 +7,7 @@ description: |
   the user picks "self-hosted" / "self-host" / "own backend." Also use when
   the user says "I want to host this myself," "no third-party," "data
   residency," or asks how to point Coolhand SDKs at a custom endpoint.
-version: 0.1.0
+version: 0.1.1
 ---
 
 # Self-Hosted Feedback (Coolhand-Compatible)
@@ -220,7 +220,7 @@ coolhand-js (only if active UI was approved):
 Same rules as the planner's Phase 3:
 
 - Hashed `creator_unique_id`.
-- Best available match field, with `client_unique_id` and/or `original_output` always present as the floor. For `llm_provider_unique_id`: see `../feedback-collection/source_apis.yml` for the response ID field per provider, captured before any output transformation. For `original_output`: pass the raw response content, not a summarised or restructured version.
+- Best available match field, with `client_unique_id` and/or `original_output` always present as the floor. For `llm_provider_unique_id`: see `../feedback-collection/source_apis.yml` for the response ID field per provider, captured before any output transformation. For OpenAI specifically, use `response.id` (`chatcmpl-…`) from the response body — not the `x-request-id` header (`req-…`), which is not ingested by the backend. For `original_output`: pass the raw response content, not a summarised or restructured version.
 - `sentiment` (string enum), not `like` (boolean).
 - `collector: "<your-app-slug>-manual"` to distinguish data sources in your own analytics.
 
