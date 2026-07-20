@@ -46,7 +46,7 @@ Create a feedback entry.
 | Field | Type | v0.1 | Notes |
 |---|---|---|---|
 | `llm_request_log_id` | integer | use | Exact match to a log row. The strongest match. |
-| `llm_provider_unique_id` | string | use | The `x-request-id` from the LLM provider's response. |
+| `llm_provider_unique_id` | string | use | The unique ID from the LLM provider's **response body** (e.g., `chatcmpl-…` for OpenAI). Not the `x-request-id` header. |
 | `client_unique_id` | string | use | Your system's unique ID for this run. **Floor field.** |
 | `original_output` | string | use | Verbatim LLM output. **Floor field.** |
 | `creator_unique_id` | string | use | SHA-256 hash of an internal user ID. Never PII. |
