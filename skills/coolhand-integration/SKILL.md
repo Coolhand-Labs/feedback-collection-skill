@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.3.1
+version: 0.3.3
 ---
 
 # Coolhand Integration (Managed)
@@ -102,7 +102,7 @@ Always include in every feedback call:
 
 - `collector: "<your-app-slug>-manual"` — replace `<your-app-slug>` with a slug identifying this integration. Helps Coolhand analytics distinguish your data.
 - `creator_unique_id` — the SHA-256 hashing pattern from the planner's Phase 3.
-- The best available matching field (`llm_request_log_id` if SDK auto-monitor is on — see `../feedback-collection/detection-patterns/providers.yml` → `server_sdk_log_id_extraction` for per-language access patterns; otherwise `llm_provider_unique_id` — see `../feedback-collection/source_apis.yml` for the field name per provider and `../feedback-collection/detection-patterns/providers.yml` → `request_id_extraction` for per-language snippets).
+- The best available matching field (`llm_request_log_id` if SDK auto-monitor is on — see `../feedback-collection/detection-patterns/providers.yml` → `server_sdk_log_id_extraction` for per-language access patterns; otherwise `llm_provider_unique_id` — see `../feedback-collection/source_apis.yml` for the field name per provider and `../feedback-collection/detection-patterns/providers.yml` → `request_id_extraction` for per-language snippets). **OpenAI / Azure OpenAI:** use `response.id` (`chatcmpl-…`) from the response body — not the `x-request-id` header (`req-…`), which is not ingested by the backend.
 - **At least one of `client_unique_id` or `original_output`** — the floor rule from the planner's Phase 3 applies in implementation, not just in planning. Both is better than one when both are available. If using `original_output`, it must be the raw response content before any transformation (see Phase 3 item #4).
 - The highest achievable signal field (`revised_output` > `explanation` > `sentiment`).
 - For binary signals, use `sentiment` (`"like"` / `"dislike"` / `"neutral"`), not the deprecated `like` boolean.
@@ -175,6 +175,20 @@ All optimization operations are available as `coolhand` subcommands. Run `coolha
 | `coolhand update-optimization <id>` | Enrich a draft with title, analysis, and implementation plan |
 
 Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
+
+**Pagination.** `search-optimizations` returns one page at a time. After showing page 1, always offer: "You have N optimizations across P pages. Want me to fetch page 2?" Use `coolhand search-optimizations --page 2` (and so on) for subsequent pages. Do not summarize page 1 results as if you've seen everything.
+
+**Full-detail flow.** The search output returns a short summary (`optimization_thesis`) and intentionally omits `analysis`, `plan`, and `orchestrator_messages`. After showing a listing, always offer: "Want me to get the full analysis and action plan for any of these?" Then use `coolhand get-optimization <id>`. Never present `optimization_thesis` as if it were the full analysis. The full record from `get-optimization` includes:
+- `analysis` — full diagnostic write-up
+- `plan` — step-by-step implementation plan
+- `comments` — human feedback added via `add-optimization-comment`
+- `orchestrator_messages` — agent conversation history (context for how the optimization was developed)
+- `coding_prompt` — the implementation prompt from the most recent change suggestion that has one
+- `pr_number` / `pr_url` — linked pull/merge request, when one exists
+
+`coding_prompt` and the PR fields are conditional — they are omitted entirely when no change suggestion supplies them, so do not expect them to always be present. (`search-optimizations` also returns `pr_number`/`pr_url` per result, but not `coding_prompt`.)
+
+**Null complexity/impact.** `complexity` and `impact` are string enum fields — `complexity` is one of `low_complexity` / `medium_complexity` / `high_complexity`, and `impact` is one of `low_impact` / `medium_impact` / `high_impact`. Either may be `null` while the agent is still processing the optimization. This is expected, not an error. Describe null values as "not yet scored" — never as "broken" or "missing data."
 
 ### F.3 — CLI upgrade (if subcommands are missing)
 
