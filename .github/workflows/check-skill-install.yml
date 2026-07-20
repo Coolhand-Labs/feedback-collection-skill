@@ -20,16 +20,16 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
-      - name: Install skills CLI
+      - name: Install skills CLI (npm install -g skills)
         run: npm install -g skills
 
-      - name: Install skills from this repo
-        run: skills add . --copy
-        # --copy avoids symlink issues on CI; installs to ./.claude/skills/ etc.
+      - name: Install all four skills from this repo (skills add . --copy --yes)
+        run: skills add . --copy --yes
+        # --copy avoids symlink issues on CI; --yes skips interactive skill-selection prompt
 
-      - name: Verify all four skills installed for Claude Code
+      - name: Verify all four skills are present under .claude/skills/
         run: |
           MISSING=()
           for skill in feedback-collection coolhand-integration self-hosted-feedback wildcard-tool; do
