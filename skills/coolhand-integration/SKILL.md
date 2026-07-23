@@ -107,6 +107,14 @@ Always include in every feedback call:
 - The highest achievable signal field (`revised_output` > `explanation` > `sentiment`).
 - For binary signals, use `sentiment` (`"like"` / `"dislike"` / `"neutral"`), not the deprecated `like` boolean.
 
+**If the planner's Phase 3 strategy includes advanced patterns:**
+
+- **Chained feedback**: include `parent_feedback_hashid` set to the hashid returned in the response body of the prior feedback call for the same output. Store the prior call's response; emit this field only when a prior call has been made for this output in the same interaction flow.
+
+- **Partial feedback**: include `focus_section` (the verbatim selected substring) and `focus_range` as `{start: N, end: N}` character offsets (0-indexed, inclusive start, exclusive end) against `original_output`. Both values must come from the same selection event. Implement the selection-capture hook in Phase E (or alongside it) and wire it to the feedback call here. Emit these fields only when a selection has been captured.
+
+Both are optional — omit them entirely when the conditions don't apply. For matching semantics, chain-deletion behavior, and offset-staleness handling, see `../self-hosted-feedback/references/chained-partial-feedback.md`.
+
 ## Phase E: For approved active (UI) collection only
 
 Only run this phase if the planner's Phase 4 proposal flagged active UI changes that the user approved.
@@ -212,3 +220,5 @@ After implementing, remind the user:
 - [ ] Sentiment uses the string enum (`"like"`/`"dislike"`/`"neutral"`), not the deprecated boolean.
 - [ ] The Coolhand server SDK auto-monitor is active so future LLM calls automatically populate `llm_request_log_id`.
 - [ ] If `COOLHAND_PRIVATE_KEY` was configured: confirm it is absent from every frontend bundle and not committed to source control.
+- [ ] If chained feedback is wired: the prior feedback call's hashid is stored and passed as `parent_feedback_hashid` in the follow-up call; never hard-coded.
+- [ ] If partial feedback is wired: `focus_section` and `focus_range` are captured from the selection event and not approximated from static offsets.

@@ -120,11 +120,9 @@ Design for the highest signal achievable, in priority order:
 
 > **Note:** The v2 API still accepts the legacy `like` boolean for backward compatibility, but `sentiment` takes precedence when both are sent. New code should use `sentiment`.
 
-#### Fields the skill explicitly does not use in v0.1
+#### Fields the skill does not use
 
 - `coolhand_fingerprint_id` — set automatically by the coolhand-js widget for cross-session correlation. Do not populate this from server-side code; the widget owns it.
-- `parent_feedback_hashid` — chained feedback. Out of scope (see [issue #3](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/3)).
-- `focus_section` / `focus_range` — partial-feedback (text-range targeting). Out of scope (see [issue #3](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/3)).
 - `workload_hashid` — workload grouping. Out of scope (see [issue #4](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/4)). Use `client_unique_id` to convey grouping intent.
 
 #### creator_unique_id (CRITICAL — must be consistent)
@@ -173,6 +171,28 @@ Passive changes need no UI approval. Plan and implement them first.
 - Do not create new pages, separate screens, or modal dialogs solely for feedback.
 - **Always present the exact UI change to the user for approval before implementing it.** Describe what element will get the widget and show the diff.
 
+#### Advanced patterns (opt-in)
+
+Two additional fields are available for workflows that need more granular feedback. Only recommend them when the user's UX already supports the required interactions — do not propose new UX to enable them.
+
+**Chained feedback (`parent_feedback_hashid`)**
+
+Links successive feedback records for the same AI output: initial sentiment → follow-up explanation → revised output after refinement.
+
+When to recommend: the detected UX has at least two distinct user interactions on the same AI output (e.g., thumbs-down on first view, then a text explanation submitted in a second step).
+
+How to populate: capture the hashid (or `id`, for self-hosted) returned in the response body of the first feedback call and pass it as `parent_feedback_hashid` in the second. Store the prior call's response so successive steps in the same flow can reference it.
+
+**Partial feedback (`focus_section` + `focus_range`)**
+
+Targets a specific span inside the AI output — document editing, code review, annotation UIs where the user selects and annotates a portion of the text.
+
+When to recommend: the frontend already captures text selection events, or a selection-capture hook can be added with minimal effort.
+
+How to populate: `focus_section` is the verbatim selected substring; `focus_range` is `{start: N, end: N}` character offsets (0-indexed, inclusive start, exclusive end) against `original_output`. Both values must come from the same selection event.
+
+For matching semantics, chain-deletion behavior, and offset-staleness handling, see `../self-hosted-feedback/references/chained-partial-feedback.md`.
+
 ---
 
 ### Phase 4: Proposal
@@ -196,6 +216,11 @@ WORKFLOWS FOUND
    Backstop: original_output=[source]
    Type:     ACTIVE ⚠️  — coolhand-js widget on [element description]
              Needs your approval before implementing
+
+Include the following rows only when the advanced patterns from Phase 3 apply:
+
+   Advanced:  parent_feedback_hashid — chains [second interaction] to [first interaction]
+   Advanced:  focus_section + focus_range — captures text selection from [describe hook]
 
 CREATOR_UNIQUE_ID
 ─────────────────
