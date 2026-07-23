@@ -7,7 +7,7 @@ description: |
   the user picks "self-hosted" / "self-host" / "own backend." Also use when
   the user says "I want to host this myself," "no third-party," "data
   residency," or asks how to point Coolhand SDKs at a custom endpoint.
-version: 0.1.1
+version: 0.2.0
 ---
 
 # Self-Hosted Feedback (Coolhand-Compatible)
@@ -130,11 +130,16 @@ original_output          text
 client_unique_id         text
 creator_unique_id        text
 collector                text
+parent_feedback_hashid   text         -- chained feedback; nullable (see references/chained-partial-feedback.md)
+focus_section            text         -- verbatim selected substring; nullable
+focus_range_start        integer      -- character offset, 0-indexed inclusive; nullable
+focus_range_end          integer      -- character offset, exclusive; nullable
+focus_range_stale        boolean      -- true when original_output changed after range was captured; not null, default false
 created_at               timestamp
 updated_at               timestamp
 ```
 
-The deferred fields (`workload_hashid`, `parent_feedback_hashid`, `focus_section`, `focus_range`, `coolhand_fingerprint_id`) are intentionally not in v0.1's schema — see [issue #3](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/3) and [issue #4](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/4).
+The remaining deferred fields (`workload_hashid`, `coolhand_fingerprint_id`) are intentionally not in this schema — see [issue #4](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/4). For chain-deletion and offset-staleness semantics, see `references/chained-partial-feedback.md`.
 
 Generate the migration in the user's ORM syntax. Use `references/api-spec.md` to verify field types when in doubt.
 
@@ -150,7 +155,7 @@ Three endpoints, in the user's framework. All require API key auth (Phase E). Se
 
 ### `POST /api/v2/llm_request_log_feedbacks`
 
-- Accept the field set from Phase C's `llm_request_log_feedbacks` table (minus `id`/`client_id`/`created_at`/`updated_at`, which are server-set).
+- Accept the field set from Phase C's `llm_request_log_feedbacks` table (minus `id`/`client_id`/`focus_range_stale`/`created_at`/`updated_at`, which are server-set). `focus_range_stale` is always `false` on create and must be ignored if a client sends it.
 - If both `sentiment` and `like` are sent, `sentiment` wins; persist `sentiment` and ignore `like`.
 - Return the inserted row with status 201.
 
@@ -158,6 +163,7 @@ Three endpoints, in the user's framework. All require API key auth (Phase E). Se
 
 - Accept the same field set as POST.
 - Update only the fields present in the request body. Identity fields (`creator_unique_id`, `llm_request_log_id`, `llm_provider_unique_id`) are immutable — return 422 if changed.
+- If `original_output` is present in the request body and the existing row has `focus_range_start IS NOT NULL`, set `focus_range_stale = true` as part of the same update.
 - Return the updated row with status 200.
 - Return 404 if `{id}` doesn't exist.
 
@@ -245,3 +251,5 @@ If any of these fail, debug before reporting completion.
 - [ ] `sentiment` is the field used for binary signals; `like` is only populated when `sentiment` is unavailable.
 - [ ] The user understands that historical data captured here lives only in their DB — Coolhand never sees it.
 - [ ] If/when the user later wants to switch to managed Coolhand, they have the option (managed Coolhand will accept the same SDK calls with the default `base_url`).
+- [ ] If chained feedback is wired: the prior feedback call's id/hashid is stored and passed as `parent_feedback_hashid` in the follow-up call; never hard-coded.
+- [ ] If partial feedback is wired: `focus_section` and `focus_range` are captured from the selection event; the PATCH endpoint sets `focus_range_stale = true` when `original_output` is updated on a row with range data.
