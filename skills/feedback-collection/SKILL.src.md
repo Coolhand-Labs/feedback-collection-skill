@@ -7,7 +7,8 @@ description: |
   /feedback-collection. Also use when the user mentions Coolhand,
   COOLHAND_API_KEY, coolhand-js, coolhand-node, coolhand-python, or coolhand-ruby.
 user_invocable: true
-version: 0.1.0
+version: 0.2.1
+shared_common: true
 ---
 
 # Feedback Collection Planner
@@ -71,6 +72,8 @@ For each AI inference call found, note:
 
 If a file appears to make inference calls but its role is ambiguous — e.g., it looks like a relay, adapter, or proxy forwarding requests on behalf of external callers — read the full file before drawing a conclusion. Check whether this application *consumes* the inference output itself or merely forwards it. Resolve every such ambiguity yourself before presenting findings; do not ask the user to confirm scope until every candidate file has been examined.
 
+For each inference-call site found, also note whether the agent at that site **registers or invokes tools as part of its operation** — for example, an MCP server, an explicit tool-call loop, or tool instructions in its prompt. Record this as `tool_calling_detected: true/false` alongside each inference-call site; it drives the wildcard eligibility check in Phase 4.
+
 ---
 
 ### Phase 2: Tech Stack Detection
@@ -98,6 +101,8 @@ Use the best available option, in priority order. **At least one of `client_uniq
 
 2. **`llm_provider_unique_id`** *(second best)* — the unique ID the LLM provider assigns to each response. The Coolhand backend uses this for **Tier 0 (zero-ambiguity) matching** — a direct lookup that is faster and more reliable than content-based matching. Capture it from the raw response object before any transformation. See `source_apis.yml` (in this skill's directory) for the field name and example value per provider; see `detection-patterns/providers.yml` → `request_id_extraction` for per-language extraction snippets.
 
+   > **OpenAI / Azure OpenAI:** use `response.id` (`chatcmpl-…`) from the response body — not the `x-request-id` response header (`req-…`). The header is not ingested by the backend; passing it causes Tier 0 matching to fail silently.
+
 3. **`client_unique_id`** *(backstop, always send)* — a unique ID from your own system for this request, session, conversation, or task. Something you can look up if needed. Acceptable forms: a hashed primary key, a session UUID, a conversation/job ID — any string that uniquely identifies this LLM run end-to-end.
 
 4. **`original_output`** *(backstop, always send when available)* — the **raw, unmodified** text or JSON the model returned, captured directly from the response object before any transformation or post-processing. The backend matches against what it stored; passing a summarised or restructured version instead of the raw response will silently break matching.
@@ -116,11 +121,9 @@ Design for the highest signal achievable, in priority order:
 
 > **Note:** The v2 API still accepts the legacy `like` boolean for backward compatibility, but `sentiment` takes precedence when both are sent. New code should use `sentiment`.
 
-#### Fields the skill explicitly does not use in v0.1
+#### Fields the skill does not use
 
 - `coolhand_fingerprint_id` — set automatically by the coolhand-js widget for cross-session correlation. Do not populate this from server-side code; the widget owns it.
-- `parent_feedback_hashid` — chained feedback. Out of scope (see [issue #3](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/3)).
-- `focus_section` / `focus_range` — partial-feedback (text-range targeting). Out of scope (see [issue #3](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/3)).
 - `workload_hashid` — workload grouping. Out of scope (see [issue #4](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/4)). Use `client_unique_id` to convey grouping intent.
 
 #### creator_unique_id (CRITICAL — must be consistent)
@@ -169,6 +172,28 @@ Passive changes need no UI approval. Plan and implement them first.
 - Do not create new pages, separate screens, or modal dialogs solely for feedback.
 - **Always present the exact UI change to the user for approval before implementing it.** Describe what element will get the widget and show the diff.
 
+#### Advanced patterns (opt-in)
+
+Two additional fields are available for workflows that need more granular feedback. Only recommend them when the user's UX already supports the required interactions — do not propose new UX to enable them.
+
+**Chained feedback (`parent_feedback_hashid`)**
+
+Links successive feedback records for the same AI output: initial sentiment → follow-up explanation → revised output after refinement.
+
+When to recommend: the detected UX has at least two distinct user interactions on the same AI output (e.g., thumbs-down on first view, then a text explanation submitted in a second step).
+
+How to populate: capture the hashid (or `id`, for self-hosted) returned in the response body of the first feedback call and pass it as `parent_feedback_hashid` in the second. Store the prior call's response so successive steps in the same flow can reference it.
+
+**Partial feedback (`focus_section` + `focus_range`)**
+
+Targets a specific span inside the AI output — document editing, code review, annotation UIs where the user selects and annotates a portion of the text.
+
+When to recommend: the frontend already captures text selection events, or a selection-capture hook can be added with minimal effort.
+
+How to populate: `focus_section` is the verbatim selected substring; `focus_range` is `{start: N, end: N}` character offsets (0-indexed, inclusive start, exclusive end) against `original_output`. Both values must come from the same selection event.
+
+For matching semantics, chain-deletion behavior, and offset-staleness handling, see `../self-hosted-feedback/references/chained-partial-feedback.md`.
+
 ---
 
 ### Phase 4: Proposal
@@ -193,6 +218,11 @@ WORKFLOWS FOUND
    Type:     ACTIVE ⚠️  — coolhand-js widget on [element description]
              Needs your approval before implementing
 
+Include the following rows only when the advanced patterns from Phase 3 apply:
+
+   Advanced:  parent_feedback_hashid — chains [second interaction] to [first interaction]
+   Advanced:  focus_section + focus_range — captures text selection from [describe hook]
+
 CREATOR_UNIQUE_ID
 ─────────────────
   Proposed: SHA-256 of [which user field] — consistent across all feedback points
@@ -202,6 +232,18 @@ SUMMARY
 ───────
   Passive: [N] workflow(s) — no UI changes
   Active:  [N] workflow(s) — UI changes need approval
+
+[Include the following block only when tool_calling_detected: true for at
+least one workflow AND a clear tool-discovery surface exists in the project.
+Omit entirely otherwise — do not mention wildcard if conditions aren't met.]
+
+WILDCARD OPPORTUNITY
+────────────────────
+  Eligible agents:   [list agents/files where tool-calling was detected]
+  Suggested surface: [MCP tool listing | tools array in <file> | other]
+  Why it fits:       [one sentence: these agents make tool calls and already
+                      discover tools via this surface]
+  → After implementation, run /wildcard-tool to set this up.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -249,7 +291,13 @@ Dispatch based on the answer:
   - **Honest caveat to share with the user:** the v2 API does not yet expose export endpoints (see [issue #5](https://github.com/Coolhand-Labs/feedback-collection-skill/issues/5)), so today "migrate later" means starting fresh in self-host with no historical data carried over. The user should know this before deciding.
 - **"both" or unclear** → ask the user to pick one for v0.1; the other can be wired up later.
 
-Each implementation skill picks up the proposal context and the strategy. The planner is done after dispatch.
+Each implementation skill picks up the proposal context and the strategy.
+
+**Wildcard follow-up (conditional).** If a WILDCARD OPPORTUNITY block was shown in Phase 4, after the implementation skill has been invoked, offer once:
+
+> "Once the integration is done, I can also set up the wildcard tool for your agents — it sits in your code and is a best-practice pattern for getting targeted reports from agents when they're struggling or hit problems with your tools. We can do it now or later."
+
+If the user says now, invoke the `wildcard-tool` skill. If later or no, drop it — one offer only. Do not mention wildcard if no WILDCARD OPPORTUNITY block was shown.
 
 ---
 
