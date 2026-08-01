@@ -35,7 +35,7 @@ If you don't have Node, use Claude Code's built-in marketplace:
 /plugin install feedback-collection@coolhand
 ```
 
-All four skills install together. You only invoke the planner directly (`/feedback-collection`); it dispatches to the implementation skills internally.
+All four skills become available globally across all your projects. You only invoke the planner directly (`/feedback-collection`); it dispatches to the implementation skills internally.
 
 ## Usage
 
