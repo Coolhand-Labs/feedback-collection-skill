@@ -1,7 +1,8 @@
 ## Shared detection references
 
 Two files in the `feedback-collection` skill are the canonical source for
-provider-specific details. All three skills in this plugin reference them:
+provider-specific details. The planner and the two implementation skills
+(the skills that opt into this shared prose) reference them:
 
 - **`skills/feedback-collection/source_apis.yml`**: the response-ID field name
   and an example value for each LLM provider. Use it to capture

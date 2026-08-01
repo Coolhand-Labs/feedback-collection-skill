@@ -29,7 +29,7 @@ In Claude Code, add this repo as a plugin marketplace and install the plugin:
 /plugin install feedback-collection@coolhand
 ```
 
-All three skills become available globally across all your projects. You only invoke the planner directly (`/feedback-collection`); it dispatches to the implementation skills internally.
+All four skills become available globally across all your projects. You only invoke the planner directly (`/feedback-collection`); it dispatches to the implementation skills internally.
 
 ## Usage
 
