@@ -1,0 +1,32 @@
+name: Build skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**/SKILL.src.md"
+      - "skills/shared/common.md"
+      - "skills/**/SKILL.md"
+      - "bin/build-skills"
+      - ".github/workflows/build-skills.yml"
+  pull_request:
+    paths:
+      - "skills/**/SKILL.src.md"
+      - "skills/shared/common.md"
+      - "skills/**/SKILL.md"
+      - "bin/build-skills"
+      - ".github/workflows/build-skills.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - run: ruby bin/build-skills --self-test
+      - run: ruby bin/build-skills --check
