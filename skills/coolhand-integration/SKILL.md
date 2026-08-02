@@ -50,6 +50,7 @@ These three guardrails bite hardest at implementation time. The full discussion 
 | "The user ID is internal-only / non-PII, hashing is overkill." | Hash anyway. SHA-256 of the internal ID, every time. No exceptions. |
 | "We approved the widget once; this next placement is similar." | Every UI change gets its own diff and its own sign-off. Approved one ≠ approved all. |
 | "API key is missing; the user is in a hurry; I'll wire up and they can fill it in later." | Stop. Wait for the key. Implementing without it produces silent send failures at runtime. |
+| "`get-optimization` failed but I have the title and thesis from `search-optimizations` — I can reconstruct the analysis." | Stop. Report the exact error. `search-optimizations` intentionally omits `analysis`, `plan`, and `orchestrator_messages`. Synthesizing those fields from a title or thesis is fabrication, not summarization. |
 
 If you find yourself constructing a fourth rationalization, surface it to the user instead of acting on it.
 
@@ -204,6 +205,8 @@ All optimization operations are available as `coolhand` subcommands. Run `coolha
 | `coolhand update-optimization <id>` | Enrich a draft with title, analysis, and implementation plan |
 
 Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
+
+**If `coolhand get-optimization` (or any optimization command) returns an error:** report the exact error message to the user and stop. Do not attempt to reconstruct optimization detail from `search-optimizations` results. `search-optimizations` intentionally omits `analysis`, `plan`, and `orchestrator_messages` — those fields only exist in the `get-optimization` response. Suggest: "This looks like a tool error — try `coolhand get-optimization --help` or check that the optimization ID is correct."
 
 **Pagination.** `search-optimizations` returns one page at a time. After showing page 1, always offer: "You have N optimizations across P pages. Want me to fetch page 2?" Use `coolhand search-optimizations --page 2` (and so on) for subsequent pages. Do not summarize page 1 results as if you've seen everything.
 
