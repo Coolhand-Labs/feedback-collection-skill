@@ -57,19 +57,25 @@ Effort: EFFORT
 Already fixed in prior iterations — do NOT re-flag these:
 PREVIOUS_FIXES
 
-Return a numbered list of issues with file path and line numbers. Be specific about what to fix and why.
-If there are NO issues (and the deterministic checks passed), respond with exactly: LGTM: No issues found.
+Tag every finding with a severity:
+- `[CRITICAL]` — security vulnerabilities, wrong/broken behavior, performance problems (a failing deterministic check from Step 1, or a hand-edited generated `SKILL.md`, also counts as `[CRITICAL]`)
+- `[NICE-TO-HAVE]` — DRY violations, missing test coverage, code-reuse opportunities (in this repo: missing versioning/CHANGELOG discipline, cross-file inconsistencies)
+- `[NITPICK]` — documentation, comments, naming, formatting-adjacent issues
+
+Return a numbered list of issues with file path and line numbers, each prefixed with its severity tag, e.g. `1. [CRITICAL] file:line — problem — fix`. Be specific about what to fix and why.
+If there are NO issues (and the deterministic checks passed), respond with a first line of exactly: LGTM: No issues found.
+End your response with a line of the form `TOKENS_USED: <number>` — your best estimate of tokens used for this review pass (approximate, not metered).
 ---
 
 ### Step 3 — Check Result
 
-- If the deterministic checks passed AND the agent says `LGTM: No issues found.` → exit the loop, go to Final Summary
-- If iteration count has reached 5 → exit the loop, go to Final Summary (partial)
+- If the deterministic checks passed AND the first line of the agent's response is exactly `LGTM: No issues found.` → exit the loop, go to CSV Run Log, then Final Summary
+- If iteration count has reached 5 → exit the loop, go to CSV Run Log, then Final Summary (partial)
 - Otherwise → proceed to Step 4
 
 ### Step 4 — Fix
 
-Fix every issue from both the deterministic checks and the reviewer. For a stale/hand-edited `SKILL.md`, the fix is to correct `SKILL.src.md` (or `common.md`) and re-run `bin/build-skills` to regenerate it — never hand-patch the generated file. Use Edit, Write, and Bash tools to apply the rest directly. Do not skip any finding.
+For every finding from both the deterministic checks and the reviewer, either fix it, or reject it with a one-line reason (false positive / out of scope / disagree with the call). Every finding must get one of these two dispositions — deterministic-check failures should essentially never be rejected. For a stale/hand-edited `SKILL.md`, the fix is to correct `SKILL.src.md` (or `common.md`) and re-run `bin/build-skills` to regenerate it — never hand-patch the generated file. Use Edit, Write, and Bash tools to apply fixes directly. Track the count of issues fixed and rejected (with severity breakdown) this iteration.
 
 ### Step 5 — Log & Continue
 
@@ -82,12 +88,12 @@ Maintain this log as you work:
 ```
 === Iteration 1 ===
 Deterministic checks: [PASS | FAIL — list of failing checks]
-Reviewer found N issues:
-  1. [file:line] description
+Reviewer found N issues (X critical, Y nice-to-have, Z nitpick):
+  1. [CRITICAL] [file:line] description
   2. ...
-Fixed:
-  - Applied: [description of fix]
-  - Applied: [description of fix]
+Disposition:
+  - Fixed: [description of fix]
+  - Rejected ([severity], reason): [description of finding]
 
 === Iteration 2 ===
 ...
@@ -96,12 +102,32 @@ Fixed:
 [CLEAN after N iterations] or [STOPPED at max iterations — N issues remain]
 ```
 
+## CSV Run Log
+
+After the loop exits (deterministic checks pass and review is clean, or max iterations reached), append one row per iteration to `~/loop-review-outputs/feedback-collection-skill.csv`. Create the directory and file with this header if it doesn't already exist:
+
+```
+timestamp,branch,iteration,model,thinking_level,clock_seconds,tokens_used_approx,critical_found,nice_to_have_found,nitpick_found,total_found,issues_addressed,issues_ignored
+```
+
+For each iteration, append a row via plain `cat >> ~/loop-review-outputs/feedback-collection-skill.csv <<EOF ... EOF` (no CSV quoting needed):
+- `timestamp` — `date -u +%Y-%m-%dT%H:%M:%SZ` at write time
+- `branch` — `git branch --show-current`
+- `iteration` — the iteration number
+- `model` — `default`
+- `thinking_level` — the EFFORT value used that iteration
+- `clock_seconds` — wall-clock duration bracketed with `date +%s` taken before Step 1's deterministic checks and after Step 4's fixes complete for that iteration
+- `tokens_used_approx` — the `TOKENS_USED` value reported by the reviewer agent that iteration
+- `critical_found`, `nice_to_have_found`, `nitpick_found`, `total_found` — counts from that iteration's reviewer findings
+- `issues_addressed`, `issues_ignored` — fixed count and rejected count from Step 4 that iteration
+
 ## Final Summary
 
 After the loop exits, output:
 
 1. **Overall result**: CLEAN (N iterations) or STOPPED (issues remain)
-2. **Per-iteration breakdown**: What was found (deterministic + reviewer) vs. what was fixed each round
+2. **Per-iteration breakdown**: What was found (deterministic + reviewer, with severity breakdown) vs. what was fixed and what was rejected (with reasons) each round
 3. **All files modified**: Complete list of files touched across all iterations
 4. **Remaining issues** (if stopped at max): Unresolved items with context on why they're hard to fix automatically
-5. **Suggested follow-up**: If any `SKILL.md` or `references/*.md` changed, recommend running `bin/check-skill-urls` once before merging (not run automatically by this loop)
+5. **CSV log**: Number of rows appended and the path (`~/loop-review-outputs/feedback-collection-skill.csv`)
+6. **Suggested follow-up**: If any `SKILL.md` or `references/*.md` changed, recommend running `bin/check-skill-urls` once before merging (not run automatically by this loop)
