@@ -17,7 +17,7 @@
 
 # Scans every file in the repo for http:// and https:// URLs and rejects
 # any that don't match a prefix in .trusted-urls.yml. Enforces the trust
-# boundary documented in CLAUDE.md.
+# boundary documented in AGENTS.md.
 #
 # Usage:
 #   bin/check-trusted-urls         # scan the repo against .trusted-urls.yml
