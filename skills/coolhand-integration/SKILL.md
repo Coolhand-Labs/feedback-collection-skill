@@ -7,7 +7,7 @@ description: |
   "managed" / "Coolhand" / "default". Also use when the user directly says
   "set up Coolhand," "install the Coolhand SDK," or asks for a Coolhand API
   key flow.
-version: 0.3.3
+version: 0.3.4
 shared_common: true
 ---
 
@@ -31,6 +31,43 @@ provider-specific details. The planner and the two implementation skills
 When a phase below needs a provider's field name or an extraction snippet, read
 these files rather than guessing.
 
+## Coolhand Help Center
+
+For questions about how Coolhand behaves (what it records per provider, feedback
+matching, partial/chained feedback, log fields, SDK best practices), do not answer
+from memory. Fetch `https://coolhandlabs.com/help.md`: an index of every article
+with a one-line summary and a per-article `.md` URL. Pick the relevant article and
+fetch that. For the raw API reference, use `https://coolhandlabs.com/docs`.
+
+## Using the latest coolhand-cli
+
+Always use the latest `coolhand-cli`. Run `npx coolhand-cli@latest <command>` for a
+zero-install one-shot, or `npm install -g coolhand-cli@latest` for a persistent
+install. Check the installed version with `coolhand --version`; if a command is
+missing or behaves unexpectedly, upgrade before assuming a bug.
+
+`coolhand help` lists every command and `coolhand help <command>` is the
+authoritative flag reference. Do not guess flags. Command groups:
+
+- **Auth:** `login`, `logout`, `status`, `whoami`, `clients`. `--client-id ID` (or
+  `COOLHAND_CLIENT_ID`) selects a stored client. `login --scope private` also
+  provisions the private key.
+- **Optimizations:** `search-optimizations`, `get-optimization`,
+  `update-optimization`, `close-optimization`.
+- **Feedback, logs, templates, workloads:** `search-feedback`, `get-feedback`,
+  `search-logs`, `fetch-log`, `search-templates`, `get-template`, `list-workloads`,
+  `get-workload`, `update-workload`.
+- **Capture:** `claude` and `monitor` run a CLI through the Coolhand proxy to
+  capture its LLM calls.
+- **Agent complaint box:** `wildcard` (aliases `complaint-box`, `report-blocker`).
+- **Claude session tooling:** `analyze-claude-sessions`, `map-claude-projects`,
+  `sync-skills`, `upload-client-file`, `search-referenced-files`,
+  `list-referenced-file-sessions`.
+
+Commands that read data (`search-feedback`, `get-feedback`, the optimization and
+template commands) require the private key, `COOLHAND_PRIVATE_KEY`. It is for
+server-side and CLI use only, never frontend code.
+
 # Coolhand Integration (Managed)
 
 Install the Coolhand server SDK and (optionally) the coolhand-js widget against the managed `coolhandlabs.com` backend, using the strategy approved by the planner skill in Phase 4.
@@ -53,10 +90,6 @@ These three guardrails bite hardest at implementation time. The full discussion 
 | "`get-optimization` failed but I have the title and thesis from `search-optimizations` — I can reconstruct the analysis." | Stop. Report the exact error. `search-optimizations` intentionally omits `analysis`, `plan`, and `orchestrator_messages`. Synthesizing those fields from a title or thesis is fabrication, not summarization. |
 
 If you find yourself constructing a fourth rationalization, surface it to the user instead of acting on it.
-
-## CLI troubleshooting
-
-If any `coolhand` CLI call is not found or behaves unexpectedly, run `npm install -g coolhand-cli` (or `npx coolhand-cli <command>` for a zero-install one-shot) and retry. See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
 
 ## Phase A: Fetch current SDK READMEs
 
@@ -193,15 +226,13 @@ Security rule: `COOLHAND_PRIVATE_KEY` must never appear in frontend code or be c
 
 ### F.2 — Run optimization commands via the CLI
 
-All optimization operations are available as `coolhand` subcommands. Run `coolhand help <command>` for the full flag reference.
+All optimization operations are available as `coolhand` subcommands. Run `coolhand help <command>` for the full flag reference (see "Using the latest coolhand-cli" above).
 
 | CLI command | What it does |
 |---|---|
 | `coolhand search-optimizations` | List and filter optimizations |
 | `coolhand get-optimization <id>` | Full detail including analysis, plan, comments, and orchestrator history |
-| `coolhand add-optimization-comment <id> <comment>` | Append a human-feedback comment |
 | `coolhand close-optimization <id> <reason>` | Dismiss a draft/proposed optimization |
-| `coolhand create-optimization` | Create a new draft optimization |
 | `coolhand update-optimization <id>` | Enrich a draft with title, analysis, and implementation plan |
 
 Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is missing, the CLI exits with a clear error pointing to `coolhand login --scope private`.
@@ -213,7 +244,7 @@ Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is mi
 **Full-detail flow.** The search output returns a short summary (`optimization_thesis`) and intentionally omits `analysis`, `plan`, and `orchestrator_messages`. After showing a listing, always offer: "Want me to get the full analysis and action plan for any of these?" Then use `coolhand get-optimization <id>`. Never present `optimization_thesis` as if it were the full analysis. The full record from `get-optimization` includes:
 - `analysis` — full diagnostic write-up
 - `plan` — step-by-step implementation plan
-- `comments` — human feedback added via `add-optimization-comment`
+- `comments` — human feedback comments
 - `orchestrator_messages` — agent conversation history (context for how the optimization was developed)
 - `coding_prompt` — the implementation prompt from the most recent change suggestion that has one
 - `pr_number` / `pr_url` — linked pull/merge request, when one exists
@@ -224,14 +255,14 @@ Each command reads `COOLHAND_PRIVATE_KEY` from the environment. If the key is mi
 
 ### F.3 — CLI upgrade (if subcommands are missing)
 
-If `coolhand help` does not list `search-optimizations`, the CLI predates these subcommands (requires v0.3.1+). Upgrade and retry:
+If `coolhand help` does not list `search-optimizations`, the CLI is out of date. Upgrade to the latest and retry:
 
 ```bash
 npm install -g coolhand-cli@latest
 # or: npx coolhand-cli@latest <command>
 ```
 
-See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
+For questions about what optimizations are or how they are produced, consult the Coolhand Help Center (`https://coolhandlabs.com/help.md`).
 
 ## Phase G: Post-implementation checklist
 
