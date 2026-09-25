@@ -7,7 +7,7 @@ description: |
   the user picks "self-hosted" / "self-host" / "own backend." Also use when
   the user says "I want to host this myself," "no third-party," "data
   residency," or asks how to point Coolhand SDKs at a custom endpoint.
-version: 0.2.0
+version: 0.2.1
 shared_common: true
 ---
 
@@ -47,10 +47,6 @@ These three guardrails bite hardest at implementation time. The full discussion 
 | "Feedback API key is missing; the user is in a hurry; I'll wire up and they can fill it in later." | Stop. Wait for the key (or generate one and have the user store it). Implementing without it produces silent send failures at runtime. |
 
 If you find yourself constructing a fourth rationalization, surface it to the user instead of acting on it.
-
-## CLI troubleshooting
-
-If any `coolhand` CLI call is not found or behaves unexpectedly, run `npm install -g coolhand-cli` (or `npx coolhand-cli <command>` for a zero-install one-shot) and retry. See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
 
 ## Phase A: Verify spec freshness
 

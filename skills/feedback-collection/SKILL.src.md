@@ -7,7 +7,7 @@ description: |
   /feedback-collection. Also use when the user mentions Coolhand,
   COOLHAND_API_KEY, coolhand-js, coolhand-node, coolhand-python, or coolhand-ruby.
 user_invocable: true
-version: 0.2.1
+version: 0.2.2
 shared_common: true
 ---
 
@@ -31,10 +31,6 @@ These three guardrails are the ones pressure (a hurry, a "small" exception, "we 
 | "Key is missing but the user is in a hurry. I'll wire everything up and they can fill it in later." | Stop at Phase 5 dispatch and wait for the correct backend-specific key. Implementing without it produces silent send failures at runtime; the key gate before dispatch is non-negotiable. |
 
 If you find yourself constructing a fourth rationalization, that's the signal to stop and surface it to the user rather than act on it.
-
-## CLI troubleshooting
-
-If any `coolhand` CLI call is not found or behaves unexpectedly, run `npm install -g coolhand-cli` (or `npx coolhand-cli <command>` for a zero-install one-shot) and retry. See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
 
 ## Instructions
 

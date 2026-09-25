@@ -7,7 +7,7 @@ description: |
   the user picks "self-hosted" / "self-host" / "own backend." Also use when
   the user says "I want to host this myself," "no third-party," "data
   residency," or asks how to point Coolhand SDKs at a custom endpoint.
-version: 0.2.0
+version: 0.2.1
 shared_common: true
 ---
 
@@ -30,6 +30,43 @@ provider-specific details. The planner and the two implementation skills
 
 When a phase below needs a provider's field name or an extraction snippet, read
 these files rather than guessing.
+
+## Coolhand Help Center
+
+For questions about how Coolhand behaves (what it records per provider, feedback
+matching, partial/chained feedback, log fields, SDK best practices), do not answer
+from memory. Fetch `https://coolhandlabs.com/help.md`: an index of every article
+with a one-line summary and a per-article `.md` URL. Pick the relevant article and
+fetch that. For the raw API reference, use `https://coolhandlabs.com/docs`.
+
+## Using the latest coolhand-cli
+
+Always use the latest `coolhand-cli`. Run `npx coolhand-cli@latest <command>` for a
+zero-install one-shot, or `npm install -g coolhand-cli@latest` for a persistent
+install. Check the installed version with `coolhand --version`; if a command is
+missing or behaves unexpectedly, upgrade before assuming a bug.
+
+`coolhand help` lists every command and `coolhand help <command>` is the
+authoritative flag reference. Do not guess flags. Command groups:
+
+- **Auth:** `login`, `logout`, `status`, `whoami`, `clients`. `--client-id ID` (or
+  `COOLHAND_CLIENT_ID`) selects a stored client. `login --scope private` also
+  provisions the private key.
+- **Optimizations:** `search-optimizations`, `get-optimization`,
+  `update-optimization`, `close-optimization`.
+- **Feedback, logs, templates, workloads:** `search-feedback`, `get-feedback`,
+  `search-logs`, `fetch-log`, `search-templates`, `get-template`, `list-workloads`,
+  `get-workload`, `update-workload`.
+- **Capture:** `claude` and `monitor` run a CLI through the Coolhand proxy to
+  capture its LLM calls.
+- **Agent complaint box:** `wildcard` (aliases `complaint-box`, `report-blocker`).
+- **Claude session tooling:** `analyze-claude-sessions`, `map-claude-projects`,
+  `sync-skills`, `upload-client-file`, `search-referenced-files`,
+  `list-referenced-file-sessions`.
+
+Commands that read data (`search-feedback`, `get-feedback`, the optimization and
+template commands) require the private key, `COOLHAND_PRIVATE_KEY`. It is for
+server-side and CLI use only, never frontend code.
 
 # Self-Hosted Feedback (Coolhand-Compatible)
 
@@ -67,10 +104,6 @@ These three guardrails bite hardest at implementation time. The full discussion 
 | "Feedback API key is missing; the user is in a hurry; I'll wire up and they can fill it in later." | Stop. Wait for the key (or generate one and have the user store it). Implementing without it produces silent send failures at runtime. |
 
 If you find yourself constructing a fourth rationalization, surface it to the user instead of acting on it.
-
-## CLI troubleshooting
-
-If any `coolhand` CLI call is not found or behaves unexpectedly, run `npm install -g coolhand-cli` (or `npx coolhand-cli <command>` for a zero-install one-shot) and retry. See https://github.com/Coolhand-Labs/coolhand-cli for full install instructions.
 
 ## Phase A: Verify spec freshness
 
